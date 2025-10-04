@@ -7,9 +7,13 @@
 
 This project focuses on protein sequence comparison and analysis using modern bioinformatics tools and high-performance computing resources.
 
-## 🚀 Getting Started
+## 🔬 Project Workflow
 
-### Setting up Apptainer with ADAM
+This project consists of 7 main tasks that demonstrate protein sequence analysis using comparative genomics approaches:
+
+### Task 1: Setting up Apptainer with ADAM ⚙️
+
+**Objective**: Configure the distributed genomics analysis environment on HPC
 
 ADAM (A Distributed Alignment Manager) is a genomics analysis platform built on Apache Spark. Follow these steps to set up the environment on HPC:
 
@@ -38,11 +42,7 @@ export SPARK_HOME=/usr/local/lib/python3.12/site-packages/pyspark
 export PATH=$SPARK_HOME/bin:$PATH
 ```
 
-## � Project Workflow
-
-This project consists of 6 main tasks that demonstrate protein sequence analysis using comparative genomics approaches:
-
-### Task 1: Data Acquisition 📥
+### Task 2: Data Acquisition 📥
 
 **Objective**: Download protein sequence datasets for comparative analysis
 
@@ -72,7 +72,7 @@ unzip zebrafish_protein.zip -d zebrafish_protein
 - 🐭 **Mouse**: [GCF_000001635.27](https://api.ncbi.nlm.nih.gov/datasets/v2/genome/accession/GCF_000001635.27/download?include_annotation_type=PROT_FASTA) - Complete proteome
 - 🐟 **Zebrafish**: [GCF_049306965.1](https://api.ncbi.nlm.nih.gov/datasets/v2/genome/accession/GCF_049306965.1/download?include_annotation_type=PROT_FASTA) - Complete proteome
 
-### Task 2: File Format Conversion 🔄
+### Task 3: File Format Conversion 🔄
 
 **Objective**: Convert protein sequence files from FASTA format to Parquet for optimized processing
 
@@ -120,10 +120,6 @@ adam-submit transformSequences zebrafish_protein.fa zebrafish_protein_parquet
 
 This format conversion enables efficient distributed processing of protein sequences using ADAM's Spark-based architecture.
 
-### Task 3: [Coming Next] 🚧
-
-_Description will be added as the project progresses..._
-
 ### Task 4: [Coming Next] 🚧
 
 _Description will be added as the project progresses..._
@@ -136,7 +132,11 @@ _Description will be added as the project progresses..._
 
 _Description will be added as the project progresses..._
 
-## �📚 Dependencies
+### Task 7: [Coming Next] 🚧
+
+_Description will be added as the project progresses..._
+
+## 📚 Dependencies
 
 - **Apptainer**: Container platform for HPC environments
 - **ADAM**: Genomics analysis framework (v1.0.1)
