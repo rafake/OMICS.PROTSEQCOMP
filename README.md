@@ -183,6 +183,8 @@ This verification step ensures that:
 
 **Note**: Make sure you're in the same directory where you performed the file conversions in Task 3 before starting PySpark.
 
+**Sampling Note**: For 100 samples, use `rdd.takeSample()` as shown in `sampling_script.py`. For larger samples, use `sample()` method with calculated fraction or `orderBy(rand()).limit()`.
+
 ### Task 5: [Coming Next] 🚧
 
 _Description will be added as the project progresses..._
