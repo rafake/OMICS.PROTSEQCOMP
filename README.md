@@ -51,7 +51,7 @@ We obtained protein sequences for two model organisms from NCBI:
 - **Mus musculus** (House Mouse) - Reference genome GCF_000001635.27
 - **Danio rerio** (Zebrafish) - Reference genome GCF_049306965.1
 
-#### Download Commands
+#### Download & Extraction Commands
 
 Execute these commands directly on HPC in your chosen directory:
 
@@ -61,6 +61,10 @@ curl -L "https://api.ncbi.nlm.nih.gov/datasets/v2/genome/accession/GCF_000001635
 
 # Download zebrafish protein sequences
 curl -L "https://api.ncbi.nlm.nih.gov/datasets/v2/genome/accession/GCF_049306965.1/download?include_annotation_type=PROT_FASTA" -o zebrafish_protein.zip
+
+# Extract downloaded archives
+unzip mouse_protein.zip -d mouse_protein
+unzip zebrafish_protein.zip -d zebrafish_protein
 ```
 
 #### Data Sources
