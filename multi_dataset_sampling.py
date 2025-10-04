@@ -50,12 +50,12 @@ try:
         print("Sample preview:")
         df_sample.show(5, truncate=False)
         
-        # Save to Parquet format
+        # Save to Parquet format (single file)
         output_parquet = f"output/samples_parquet/{dataset_name}_100"
         print(f"Saving samples to Parquet: {output_parquet}")
-        df_sample.write.mode("overwrite").parquet(output_parquet)
+        df_sample.coalesce(1).write.mode("overwrite").parquet(output_parquet)
         
-        # Save to CSV format
+        # Save to CSV format (single file)
         output_csv = f"output/samples_csv/{dataset_name}_100"
         print(f"Saving samples to CSV: {output_csv}")
         df_sample.coalesce(1).write.mode("overwrite").option("header", "true").csv(output_csv)
