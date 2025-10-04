@@ -2,7 +2,8 @@
 #SBATCH -J multi-sampling-task
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
-#SBATCH --mem=8000
+#SBATCH --cpus-per-task=4
+#SBATCH --mem=5000
 #SBATCH --partition topola
 #SBATCH --time=00:30:00
 #SBATCH -A g100-2238
