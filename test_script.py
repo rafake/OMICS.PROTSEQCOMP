@@ -1,16 +1,8 @@
-# Test Script
-# Simple test to verify Python execution
-
 import os
 
-print("Hello World!")
-
-# Print current working directory
-cwd = os.getcwd()
-print("Current working directory:", cwd)
-
-# List files in the current directory
-files = os.listdir(cwd)
-print("Files in directory:")
-for f in files:
-    print("  -", f)
+# Prepare an output file in the current directory
+out_file = os.path.join(os.getcwd(), "test_output.txt")
+with open(out_file, "w") as f:
+    # Print and save at the same time, flushing stdout immediately
+    print("Hello World!", flush=True)
+    print("Hello World!", file=f, flush=True)
