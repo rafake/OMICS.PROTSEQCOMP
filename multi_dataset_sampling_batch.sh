@@ -25,9 +25,6 @@ for input_dir in input/*/; do
         if [[ "$dataset_name" == *"parquet"* ]] || find "$input_dir" -name "*.parquet" -type f | grep -q .; then
             echo "Processing dataset: $dataset_name"
             
-            # Create dataset-specific output directories
-            mkdir -p "output/samples_parquet/${dataset_name}_100"
-            
             # Run sampling for this dataset
             $APPTAINER exec docker://quay.io/biocontainers/adam:1.0.1--hdfd78af_0 python -c "
 import sys
