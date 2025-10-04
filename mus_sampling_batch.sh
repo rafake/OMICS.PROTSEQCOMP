@@ -10,6 +10,6 @@
 APPTAINER=$HOME/zadanie/1_environment/apptainer_local/bin/apptainer
 
 # Run Spark container with sampling commands
-$APPTAINER exec docker://apache/spark spark-submit mus_musculus_sampling.py
+$APPTAINER exec docker://quay.io/biocontainers/adam:1.0.1--hdfd78af_0 python mus_musculus_sampling.py
 
 echo "Mus musculus sampling job completed!"
