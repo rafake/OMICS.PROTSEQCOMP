@@ -147,12 +147,33 @@ print(os.getcwd())
 print(os.listdir())
 ```
 
+#### Parquet Data Verification
+
+Verify that PySpark can correctly read the Parquet files by loading them into DataFrames:
+
+```python
+# Load mouse protein data into DataFrame
+df_mouse = spark.read.parquet("mouse_protein_parquet")
+df_mouse.printSchema()
+df_mouse.show(5, truncate=False)
+
+# Load zebrafish protein data into DataFrame
+df_zebrafish = spark.read.parquet("zebrafish_protein_parquet")
+df_zebrafish.printSchema()
+df_zebrafish.show(5, truncate=False)
+```
+
 #### Expected Output
 
-You should see your Parquet directories listed:
+You should see:
 
-- `mouse_protein_parquet/`
-- `zebrafish_protein_parquet/`
+1. **Directory listing** with your Parquet directories:
+
+   - `mouse_protein_parquet/`
+   - `zebrafish_protein_parquet/`
+
+2. **DataFrame schema** showing the structure of protein sequence data
+3. **Sample data** displaying the first 5 protein sequences from each dataset
 
 This verification step ensures that:
 
