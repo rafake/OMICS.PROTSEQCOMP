@@ -17,7 +17,7 @@ print("Starting Mus musculus protein sampling...")
 
 # Load Mus musculus dataset from input directory
 print("Loading Mus musculus parquet data...")
-df_mouse = spark.read.parquet("input/mus_musculus")
+df_mouse = spark.read.parquet("input/mus_muculus")
 
 print(f"Total Mus musculus protein sequences: {df_mouse.count()}")
 
