@@ -20,6 +20,27 @@ __pycache__/
 # Output files from test scripts
 hello_world_output.txt
 
+# Input and output directories
+input/
+output/
+data/
+results/
+samples_parquet/
+samples_csv/
+mouse_protein/
+zebrafish_protein/
+mouse_protein_parquet/
+zebrafish_protein_parquet/
+mouse_protein_sample_100/
+zebrafish_protein_sample_100/
+
+# Data files
+*.zip
+*.fa
+*.faa
+*.parquet
+*.csv
+
 # Temporary files
 *.tmp
 *.temp
