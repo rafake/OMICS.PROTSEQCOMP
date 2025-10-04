@@ -126,6 +126,14 @@ This format conversion enables efficient distributed processing of protein seque
 
 After converting the protein sequences to Parquet format, we need to set up PySpark to work with the data files and verify they are accessible in our current working environment.
 
+#### Environment Setup
+
+First, set the APPTAINER variable to simplify command execution:
+
+```bash
+APPTAINER=<your Apptainer directory>/apptainer_local/bin/apptainer
+```
+
 #### Starting PySpark Session
 
 Launch PySpark within the Apptainer environment:
@@ -196,10 +204,14 @@ This script contains commands for:
 - Converting samples back to DataFrames
 - Saving samples to both Parquet and CSV formats
 
-Execute the sampling script in PySpark:
+Execute the sampling script using Apptainer:
 
-```python
-exec(open('sampling_commands.py').read())
+```bash
+# Run the sampling script
+$APPTAINER exec docker://quay.io/biocontainers/adam:1.0.1--hdfd78af_0 spark-submit sampling_commands.py
+
+# Test PySpark functionality (optional)
+$APPTAINER exec docker://quay.io/biocontainers/adam:1.0.1--hdfd78af_0 spark-submit test_script.py
 ```
 
 **Sampling Note**: For 100 samples, use `rdd.takeSample()` as shown in `sampling_commands.py`. For larger samples, use `sample()` method with calculated fraction or `orderBy(rand()).limit()`.
