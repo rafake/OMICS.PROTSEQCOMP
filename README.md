@@ -38,7 +38,56 @@ export SPARK_HOME=/usr/local/lib/python3.12/site-packages/pyspark
 export PATH=$SPARK_HOME/bin:$PATH
 ```
 
-## 📚 Dependencies
+## � Project Workflow
+
+This project consists of 6 main tasks that demonstrate protein sequence analysis using comparative genomics approaches:
+
+### Task 1: Data Acquisition 📥
+
+**Objective**: Download protein sequence datasets for comparative analysis
+
+We obtained protein sequences for two model organisms from NCBI:
+
+- **Mus musculus** (House Mouse) - Reference genome GCF_000001635.27
+- **Danio rerio** (Zebrafish) - Reference genome GCF_049306965.1
+
+#### Download Commands
+
+Execute these commands directly on HPC in your chosen directory:
+
+```bash
+# Download mouse protein sequences
+curl -L "https://api.ncbi.nlm.nih.gov/datasets/v2/genome/accession/GCF_000001635.27/download?include_annotation_type=PROT_FASTA" -o mouse_protein.zip
+
+# Download zebrafish protein sequences  
+curl -L "https://api.ncbi.nlm.nih.gov/datasets/v2/genome/accession/GCF_049306965.1/download?include_annotation_type=PROT_FASTA" -o zebrafish_protein.zip
+```
+
+#### Data Sources
+- 🐭 **Mouse**: [GCF_000001635.27](https://api.ncbi.nlm.nih.gov/datasets/v2/genome/accession/GCF_000001635.27/download?include_annotation_type=PROT_FASTA) - Complete proteome
+- 🐟 **Zebrafish**: [GCF_049306965.1](https://api.ncbi.nlm.nih.gov/datasets/v2/genome/accession/GCF_049306965.1/download?include_annotation_type=PROT_FASTA) - Complete proteome
+
+### Task 2: [Coming Next] 🚧
+
+*Description will be added as the project progresses...*
+
+### Task 3: [Coming Next] 🚧
+
+*Description will be added as the project progresses...*
+
+### Task 4: [Coming Next] 🚧
+
+*Description will be added as the project progresses...*
+
+### Task 5: [Coming Next] 🚧
+
+*Description will be added as the project progresses...*
+
+### Task 6: [Coming Next] 🚧
+
+*Description will be added as the project progresses...*
+
+## �📚 Dependencies
 
 - **Apptainer**: Container platform for HPC environments
 - **ADAM**: Genomics analysis framework (v1.0.1)
@@ -57,4 +106,4 @@ For more detailed information about ADAM, visit the [official documentation](htt
 
 ---
 
-*This project is part of the OMICS curriculum at ICM UW.*
+_This project is part of the OMICS curriculum at ICM UW._
