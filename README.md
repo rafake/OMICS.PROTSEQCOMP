@@ -183,7 +183,26 @@ This verification step ensures that:
 
 **Note**: Make sure you're in the same directory where you performed the file conversions in Task 3 before starting PySpark.
 
-**Sampling Note**: For 100 samples, use `rdd.takeSample()` as shown in `sampling_script.py`. For larger samples, use `sample()` method with calculated fraction or `orderBy(rand()).limit()`.
+#### Sampling Commands
+
+For data sampling and analysis, use the provided script:
+
+📄 **`sampling_commands.py`**
+
+This script contains commands for:
+
+- Loading parquet datasets
+- Taking 100 random samples using `rdd.takeSample()`
+- Converting samples back to DataFrames
+- Saving samples to both Parquet and CSV formats
+
+Execute the sampling script in PySpark:
+
+```python
+exec(open('sampling_commands.py').read())
+```
+
+**Sampling Note**: For 100 samples, use `rdd.takeSample()` as shown in `sampling_commands.py`. For larger samples, use `sample()` method with calculated fraction or `orderBy(rand()).limit()`.
 
 ### Task 5: [Coming Next] 🚧
 

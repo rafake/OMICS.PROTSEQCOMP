@@ -41,9 +41,3 @@ df_zebrafish_100.write.mode("overwrite").parquet("samples_parquet/zebrafish_100"
 # Save to CSV format
 df_mouse_100.write.mode("overwrite").option("header", "true").csv("samples_csv/mouse_100")
 df_zebrafish_100.write.mode("overwrite").option("header", "true").csv("samples_csv/zebrafish_100")
-
-print("\nSamples saved to:")
-print("- samples_parquet/mouse_100/")
-print("- samples_parquet/zebrafish_100/")
-print("- samples_csv/mouse_100/")
-print("- samples_csv/zebrafish_100/")
