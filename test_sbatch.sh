@@ -7,4 +7,7 @@
 #SBATCH --time=00:05:00
 #SBATCH -A g100-2238
 
-echo "hello world sbatch"
+APPTAINER=$HOME/zadanie/1_environment/apptainer_local/bin/apptainer
+
+# Run your PySpark script inside the ADAM container
+$APPTAINER exec docker://quay.io/biocontainers/adam:1.0.1--hdfd78af_0 spark-submit test_script.py
