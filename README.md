@@ -81,6 +81,7 @@ After extracting the downloaded archives, the protein sequence data is located d
 #### File Location & Structure
 
 The protein sequences are found in `protein.faa` files nested within the extracted directories:
+
 - `mouse_protein/` → navigate to find `protein.faa`
 - `zebrafish_protein/` → navigate to find `protein.faa`
 
