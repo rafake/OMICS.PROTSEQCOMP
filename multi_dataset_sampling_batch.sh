@@ -12,7 +12,6 @@ APPTAINER=$HOME/zadanie/1_environment/apptainer_local/bin/apptainer
 
 # Create output directories
 mkdir -p output/samples_parquet
-mkdir -p output/samples_csv
 
 echo "Starting multi-dataset sampling job..."
 
@@ -28,7 +27,6 @@ for input_dir in input/*/; do
             
             # Create dataset-specific output directories
             mkdir -p "output/samples_parquet/${dataset_name}_100"
-            mkdir -p "output/samples_csv/${dataset_name}_100"
             
             # Run sampling for this dataset
             $APPTAINER exec docker://quay.io/biocontainers/adam:1.0.1--hdfd78af_0 python -c "
