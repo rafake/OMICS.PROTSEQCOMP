@@ -1,0 +1,25 @@
+# SLURM output files
+*.out
+slurm-*.out
+slurm*.out
+
+# SLURM error files
+*.err
+slurm-*.err
+slurm*.err
+
+# General SLURM job files
+*.o[0-9]*
+*.e[0-9]*
+
+# Python cache files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Output files from test scripts
+hello_world_output.txt
+
+# Temporary files
+*.tmp
+*.temp
