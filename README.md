@@ -142,77 +142,44 @@ Launch PySpark within the Apptainer environment:
 pyspark
 ```
 
-#### Directory and File Verification
+#### Multi-Dataset Batch Sampling
 
-Once PySpark is running, verify your working directory and confirm the Parquet files are available:
+For processing multiple datasets automatically, use the batch job system:
 
-```python
+📄 **`multi_dataset_sampling_batch.sh`** - Automated batch processing script
 
-# Check current working directory
-print(os.getcwd())
+This SLURM batch job will:
 
-# List files in current directory to verify Parquet files are present
-print(os.listdir())
-```
+- 🔍 **Scan input directory** for datasets with parquet files or "parquet" in the name
+- 🎲 **Create 100 random samples** from each dataset using `rdd.takeSample()`
+- 💾 **Save timestamped results** to `output/samples_parquet/`
+- ⚡ **Process multiple datasets** in a single job submission
 
-#### Parquet Data Verification
+**Setup and Usage:**
 
-Verify that PySpark can correctly read the Parquet files by loading them into DataFrames:
+1. **Organize input data:**
 
-```python
-# Load mouse protein data into DataFrame
-df_mouse = spark.read.parquet("mouse_protein_parquet")
-df_mouse.printSchema()
-df_mouse.show(5, truncate=False)
+   ```
+   input/
+   ├── mus_musculus_parquet/
+   ├── zebrafish_parquet/
+   └── other_dataset_parquet/
+   ```
 
-# Load zebrafish protein data into DataFrame
-df_zebrafish = spark.read.parquet("zebrafish_protein_parquet")
-df_zebrafish.printSchema()
-df_zebrafish.show(5, truncate=False)
-```
+2. **Submit batch job:**
 
-#### Expected Output
+   ```bash
+   sbatch multi_dataset_sampling_batch.sh
+   ```
 
-You should see:
-
-1. **Directory listing** with your Parquet directories:
-
-   - `mouse_protein_parquet/`
-   - `zebrafish_protein_parquet/`
-
-2. **DataFrame schema** showing the structure of protein sequence data
-3. **Sample data** displaying the first 5 protein sequences from each dataset
-
-This verification step ensures that:
-
-- ✅ PySpark is properly configured within the Apptainer environment
-- ✅ You're in the correct working directory
-- ✅ The converted Parquet files are accessible for subsequent analysis
-
-**Note**: Make sure you're in the same directory where you performed the file conversions in Task 3 before starting PySpark.
-
-#### Sampling Commands
-
-For data sampling and analysis, use the provided script:
-
-📄 **`sampling_commands.py`**
-
-This script contains commands for:
-
-- Loading parquet datasets
-- Taking 100 random samples using `rdd.takeSample()`
-- Converting samples back to DataFrames
-- Saving samples to both Parquet and CSV formats
-
-Execute the sampling script using Apptainer:
-
-```bash
-# Run the sampling script
-$APPTAINER exec docker://quay.io/biocontainers/adam:1.0.1--hdfd78af_0 spark-submit sampling_commands.py
-
-# Test PySpark functionality (optional)
-$APPTAINER exec docker://quay.io/biocontainers/adam:1.0.1--hdfd78af_0 spark-submit test_script.py
-```
+3. **Check results:**
+   ```
+   output/
+   └── samples_parquet/
+       ├── mus_musculus_parquet_100_YYYYMMDD_HHMMSS/
+       ├── zebrafish_parquet_100_YYYYMMDD_HHMMSS/
+       └── other_dataset_parquet_100_YYYYMMDD_HHMMSS/
+   ```
 
 **Sampling Note**: For 100 samples, use `rdd.takeSample()` as shown in `sampling_commands.py`. For larger samples, use `sample()` method with calculated fraction or `orderBy(rand()).limit()`.
 
@@ -224,7 +191,7 @@ _Description will be added as the project progresses..._
 
 _Description will be added as the project progresses..._
 
-### Task 7: [Coming Next] 🚧
+### Task 7: [Coming Next] 🚧a
 
 _Description will be added as the project progresses..._
 
