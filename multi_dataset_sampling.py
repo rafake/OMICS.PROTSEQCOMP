@@ -55,15 +55,8 @@ try:
         print(f"Saving samples to Parquet: {output_parquet}")
         df_sample.coalesce(1).write.mode("overwrite").parquet(output_parquet)
         
-        # Save to CSV format (single file)
-        output_csv = f"output/samples_csv/{dataset_name}_100"
-        print(f"Saving samples to CSV: {output_csv}")
-        df_sample.coalesce(1).write.mode("overwrite").option("header", "true").csv(output_csv)
-        
         print(f"Sampling completed for {dataset_name}!")
-        print(f"Output files saved to:")
-        print(f"- {output_parquet}/")
-        print(f"- {output_csv}/")
+        print(f"Output file saved to: {output_parquet}/")
 
 except Exception as e:
     print(f"Error processing {dataset_name}: {str(e)}")
