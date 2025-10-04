@@ -120,9 +120,47 @@ adam-submit transformSequences zebrafish_protein.fa zebrafish_protein_parquet
 
 This format conversion enables efficient distributed processing of protein sequences using ADAM's Spark-based architecture.
 
-### Task 4: [Coming Next] 🚧
+### Task 4: PySpark Environment Setup �
 
-_Description will be added as the project progresses..._
+**Objective**: Initialize PySpark session and verify data availability for analysis
+
+After converting the protein sequences to Parquet format, we need to set up PySpark to work with the data files and verify they are accessible in our current working environment.
+
+#### Starting PySpark Session
+
+Launch PySpark within the Apptainer environment:
+
+```bash
+pyspark
+```
+
+#### Directory and File Verification
+
+Once PySpark is running, verify your working directory and confirm the Parquet files are available:
+
+```python
+# Import required modules
+import os
+
+# Check current working directory
+print(os.getcwd())
+
+# List files in current directory to verify Parquet files are present
+print(os.listdir())
+```
+
+#### Expected Output
+
+You should see your Parquet directories listed:
+- `mouse_protein_parquet/`
+- `zebrafish_protein_parquet/`
+
+This verification step ensures that:
+- ✅ PySpark is properly configured within the Apptainer environment
+- ✅ You're in the correct working directory
+- ✅ The converted Parquet files are accessible for subsequent analysis
+
+**Note**: Make sure you're in the same directory where you performed the file conversions in Task 3 before starting PySpark.
 
 ### Task 5: [Coming Next] 🚧
 
