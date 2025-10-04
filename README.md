@@ -72,9 +72,33 @@ unzip zebrafish_protein.zip -d zebrafish_protein
 - 🐭 **Mouse**: [GCF_000001635.27](https://api.ncbi.nlm.nih.gov/datasets/v2/genome/accession/GCF_000001635.27/download?include_annotation_type=PROT_FASTA) - Complete proteome
 - 🐟 **Zebrafish**: [GCF_049306965.1](https://api.ncbi.nlm.nih.gov/datasets/v2/genome/accession/GCF_049306965.1/download?include_annotation_type=PROT_FASTA) - Complete proteome
 
-### Task 2: [Coming Next] 🚧
+### Task 2: File Format Conversion 🔄
 
-_Description will be added as the project progresses..._
+**Objective**: Convert protein sequence files from FASTA format to Parquet for optimized processing
+
+After extracting the downloaded archives, the protein sequence data is located deep within the directory structure in `.faa` format (FASTA Amino Acid files). This task involves a two-step conversion process to prepare the data for efficient analysis with ADAM.
+
+#### File Location & Structure
+
+The protein sequences are found in `protein.faa` files nested within the extracted directories:
+- `mouse_protein/` → navigate to find `protein.faa`
+- `zebrafish_protein/` → navigate to find `protein.faa`
+
+#### Conversion Process
+
+The conversion involves two sequential steps:
+
+1. **Step 1**: Rename `.faa` files to `.fa` format (standard FASTA extension)
+2. **Step 2**: Convert `.fa` files to `.parquet` format for optimized distributed processing
+
+#### Why Parquet Format?
+
+- **🚀 Performance**: Faster read/write operations for large datasets
+- **💾 Compression**: Reduced storage requirements
+- **⚡ Spark Integration**: Native support in Apache Spark/ADAM
+- **🔍 Columnar Storage**: Efficient querying and analysis
+
+This format conversion enables efficient distributed processing of protein sequences using ADAM's Spark-based architecture.
 
 ### Task 3: [Coming Next] 🚧
 
