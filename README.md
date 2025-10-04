@@ -139,8 +139,6 @@ pyspark
 Once PySpark is running, verify your working directory and confirm the Parquet files are available:
 
 ```python
-# Import required modules
-import os
 
 # Check current working directory
 print(os.getcwd())
@@ -152,10 +150,12 @@ print(os.listdir())
 #### Expected Output
 
 You should see your Parquet directories listed:
+
 - `mouse_protein_parquet/`
 - `zebrafish_protein_parquet/`
 
 This verification step ensures that:
+
 - ✅ PySpark is properly configured within the Apptainer environment
 - ✅ You're in the correct working directory
 - ✅ The converted Parquet files are accessible for subsequent analysis
