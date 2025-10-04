@@ -89,8 +89,19 @@ The protein sequences are found in `protein.faa` files nested within the extract
 
 The conversion involves two sequential steps:
 
-1. **Step 1**: Rename `.faa` files to `.fa` format (standard FASTA extension)
-2. **Step 2**: Convert `.fa` files to `.parquet` format for optimized distributed processing
+**Step 1: File Renaming**
+Rename `.faa` files to `.fa` format (standard FASTA extension):
+
+```bash
+# Navigate to the protein.faa file location within mouse_protein directory
+mv protein.faa mouse_protein.fa
+
+# Navigate to the protein.faa file location within zebrafish_protein directory
+mv protein.faa zebrafish_protein.fa
+```
+
+**Step 2: Format Conversion**
+Convert `.fa` files to `.parquet` format for optimized distributed processing
 
 #### Why Parquet Format?
 
