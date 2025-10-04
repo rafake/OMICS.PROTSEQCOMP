@@ -59,33 +59,34 @@ Execute these commands directly on HPC in your chosen directory:
 # Download mouse protein sequences
 curl -L "https://api.ncbi.nlm.nih.gov/datasets/v2/genome/accession/GCF_000001635.27/download?include_annotation_type=PROT_FASTA" -o mouse_protein.zip
 
-# Download zebrafish protein sequences  
+# Download zebrafish protein sequences
 curl -L "https://api.ncbi.nlm.nih.gov/datasets/v2/genome/accession/GCF_049306965.1/download?include_annotation_type=PROT_FASTA" -o zebrafish_protein.zip
 ```
 
 #### Data Sources
+
 - 🐭 **Mouse**: [GCF_000001635.27](https://api.ncbi.nlm.nih.gov/datasets/v2/genome/accession/GCF_000001635.27/download?include_annotation_type=PROT_FASTA) - Complete proteome
 - 🐟 **Zebrafish**: [GCF_049306965.1](https://api.ncbi.nlm.nih.gov/datasets/v2/genome/accession/GCF_049306965.1/download?include_annotation_type=PROT_FASTA) - Complete proteome
 
 ### Task 2: [Coming Next] 🚧
 
-*Description will be added as the project progresses...*
+_Description will be added as the project progresses..._
 
 ### Task 3: [Coming Next] 🚧
 
-*Description will be added as the project progresses...*
+_Description will be added as the project progresses..._
 
 ### Task 4: [Coming Next] 🚧
 
-*Description will be added as the project progresses...*
+_Description will be added as the project progresses..._
 
 ### Task 5: [Coming Next] 🚧
 
-*Description will be added as the project progresses...*
+_Description will be added as the project progresses..._
 
 ### Task 6: [Coming Next] 🚧
 
-*Description will be added as the project progresses...*
+_Description will be added as the project progresses..._
 
 ## �📚 Dependencies
 
