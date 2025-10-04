@@ -101,7 +101,15 @@ mv protein.faa zebrafish_protein.fa
 ```
 
 **Step 2: Format Conversion**
-Convert `.fa` files to `.parquet` format for optimized distributed processing
+Convert `.fa` files to `.parquet` format for optimized distributed processing using ADAM:
+
+```bash
+# Convert mouse protein sequences to Parquet format
+adam-submit transformSequences mouse_protein.fa mouse_protein_parquet
+
+# Convert zebrafish protein sequences to Parquet format
+adam-submit transformSequences zebrafish_protein.fa zebrafish_protein_parquet
+```
 
 #### Why Parquet Format?
 
