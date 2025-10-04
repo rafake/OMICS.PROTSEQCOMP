@@ -3,6 +3,7 @@
 
 from pyspark.sql import SparkSession
 import os
+from datetime import datetime
 
 # Get dataset info from environment/variables
 dataset_name = globals().get('dataset_name', 'unknown')
@@ -50,8 +51,9 @@ try:
         print("Sample preview:")
         df_sample.show(5, truncate=False)
         
-        # Save to Parquet format (single file)
-        output_parquet = f"output/samples_parquet/{dataset_name}_100"
+        # Save to Parquet format (single file) with timestamp
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        output_parquet = f"output/samples_parquet/{dataset_name}_100_{timestamp}"
         print(f"Saving samples to Parquet: {output_parquet}")
         df_sample.coalesce(1).write.mode("overwrite").parquet(output_parquet)
         
