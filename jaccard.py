@@ -96,7 +96,10 @@ top10 = results.orderBy(col("jaccard").desc()).limit(10)
 # 9️⃣ Save outputs
 # ----------------------------------------------------------
 results.write.mode("overwrite").parquet("mouse_zebrafish_100x100_jaccard.parquet")
-top10.write.mode("overwrite").csv("top10_mouse_fish_jaccard.csv", header=True)
+
+# For CSV output, exclude array columns (CSV doesn't support complex types)
+top10_for_csv = top10.select("mouse_id", "mouse_seq", "fish_id", "fish_seq", "jaccard")
+top10_for_csv.write.mode("overwrite").csv("top10_mouse_fish_jaccard.csv", header=True)
 
 # ----------------------------------------------------------
 # 🔟 Show results
