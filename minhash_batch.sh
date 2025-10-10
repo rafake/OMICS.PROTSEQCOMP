@@ -34,25 +34,25 @@ echo "Using latest sample directory: $LATEST_SAMPLE_DIR"
 SAMPLE_TIMESTAMP=$(basename "$LATEST_SAMPLE_DIR" | sed 's/sample_//')
 echo "Extracted sample timestamp: $SAMPLE_TIMESTAMP"
 
-# Find parquet directories in the latest sample directory
-PARQUET_FILES=($(find "$LATEST_SAMPLE_DIR" -name "*.parquet" -type d))
+# Find adam directories in the latest sample directory
+ADAM_FILES=($(find "$LATEST_SAMPLE_DIR" -name "*.adam" -type d))
 
-if [ ${#PARQUET_FILES[@]} -lt 2 ]; then
-    echo "Error: Need at least 2 parquet directories for comparison!"
-    echo "Found ${#PARQUET_FILES[@]} parquet directories in $LATEST_SAMPLE_DIR"
+if [ ${#ADAM_FILES[@]} -lt 2 ]; then
+    echo "Error: Need at least 2 adam directories for comparison!"
+    echo "Found ${#ADAM_FILES[@]} adam directories in $LATEST_SAMPLE_DIR"
     echo "Available files:"
     ls -la "$LATEST_SAMPLE_DIR" 2>/dev/null || echo "Directory is empty or inaccessible"
     exit 1
 fi
 
-echo "Found ${#PARQUET_FILES[@]} parquet directories in $LATEST_SAMPLE_DIR:"
-for file in "${PARQUET_FILES[@]}"; do
+echo "Found ${#ADAM_FILES[@]} adam directories in $LATEST_SAMPLE_DIR:"
+for file in "${ADAM_FILES[@]}"; do
     echo "- $(basename "$file")"
 done
 
-# Use first two parquet directories for comparison
-MOUSE_PARQUET_PATH="${PARQUET_FILES[0]}"
-FISH_PARQUET_PATH="${PARQUET_FILES[1]}"
+# Use first two adam directories for comparison
+MOUSE_PARQUET_PATH="${ADAM_FILES[0]}"
+FISH_PARQUET_PATH="${ADAM_FILES[1]}"
 
 echo "Using files for MinHash analysis:"
 echo "  File 1 (mouse): $MOUSE_PARQUET_PATH"

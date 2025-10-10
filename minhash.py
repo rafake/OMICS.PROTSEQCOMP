@@ -20,7 +20,7 @@ for item in os.listdir():
 spark = SparkSession.builder.appName("MouseFishMinHash").getOrCreate()
 
 # ------------------------------------------------------------
-# 2️⃣ Load Parquet data from sample directories
+# 2️⃣ Load ADAM data from sample directories
 # ------------------------------------------------------------
 # Get file paths from environment variables or use defaults
 mouse_path = os.environ.get('MOUSE_PARQUET_PATH', 'mouse.adam')
@@ -29,8 +29,9 @@ fish_path = os.environ.get('FISH_PARQUET_PATH', 'danio.adam')
 print(f"Loading mouse data from: {mouse_path}")
 print(f"Loading fish data from: {fish_path}")
 
-mouse_df = spark.read.parquet(mouse_path)
-fish_df  = spark.read.parquet(fish_path)
+# Load ADAM format data (which is stored as parquet internally)
+mouse_df = spark.read.format("parquet").load(mouse_path)
+fish_df  = spark.read.format("parquet").load(fish_path)
 
 # ------------------------------------------------------------
 # 3️⃣ Use all sequences from sample data (already sampled)
