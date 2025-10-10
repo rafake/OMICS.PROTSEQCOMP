@@ -3,11 +3,17 @@ from pyspark.sql.functions import udf, col, lit, size, rand
 from pyspark.sql.types import FloatType, ArrayType, StringType
 import os
 import shutil
+import sys
 from datetime import datetime
 
 # ----------------------------------------------------------
-# 0️⃣ Check working directory
+# 0️⃣ Check for no-save parameter and working directory
 # ----------------------------------------------------------
+# Check if --no-save parameter is passed
+no_save_mode = "--no-save" in sys.argv or "--dry-run" in sys.argv
+if no_save_mode:
+    print("Running in NO-SAVE mode - results will only be displayed, not saved")
+
 print("Current working directory:", os.getcwd())
 print("Files in current directory:")
 for item in os.listdir():
@@ -95,63 +101,67 @@ results = pairs.withColumn("jaccard", jaccard_udf(col("mouse_kmers"), col("fish_
 top10 = results.orderBy(col("jaccard").desc()).limit(10)
 
 # ----------------------------------------------------------
-# 9️⃣ Save outputs to timestamped directory
+# 9️⃣ Save outputs to timestamped directory (unless in no-save mode)
 # ----------------------------------------------------------
-# Use sample timestamp from environment variable, or fall back to current time
-sample_timestamp = os.environ.get('SAMPLE_TIMESTAMP')
-if sample_timestamp:
-    timestamp = sample_timestamp
-    print(f"Using sample timestamp from environment: {timestamp}")
+if not no_save_mode:
+    # Use sample timestamp from environment variable, or fall back to current time
+    sample_timestamp = os.environ.get('SAMPLE_TIMESTAMP')
+    if sample_timestamp:
+        timestamp = sample_timestamp
+        print(f"Using sample timestamp from environment: {timestamp}")
+    else:
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        print(f"No sample timestamp found, using current time: {timestamp}")
+
+    comparison_output_dir = f"output/protein_comparison/{timestamp}"
+    jaccard_output_dir = f"{comparison_output_dir}/jaccard"
+    os.makedirs(jaccard_output_dir, exist_ok=True)
+
+    print(f"Saving Jaccard results to: {jaccard_output_dir}")
+
+    # Save all results to Parquet
+    results.write.mode("overwrite").parquet(f"{jaccard_output_dir}/mouse_zebrafish_100x100_jaccard.parquet")
+
+    # For CSV output, save only essential columns
+    top10_for_csv = top10.select("mouse_id", "fish_id", "jaccard")
+    top10_for_csv.write.mode("overwrite").csv(f"{jaccard_output_dir}/top10_mouse_fish_jaccard.csv", header=True)
+
+    # Copy input files to shared comparison directory
+    print("Copying input sample files to shared comparison directory...")
+
+    # Create shared input data directory
+    input_data_dir = f"{comparison_output_dir}/input_data"
+    os.makedirs(input_data_dir, exist_ok=True)
+
+    # Copy mouse sample files
+    mouse_source = mouse_path
+    mouse_dest = f"{input_data_dir}/mouse_sample"
+    if os.path.exists(mouse_source):
+        shutil.copytree(mouse_source, mouse_dest, dirs_exist_ok=True)
+        print(f"Mouse sample data copied to: {mouse_dest}")
+    else:
+        print(f"Warning: Mouse source directory not found: {mouse_source}")
+
+    # Copy fish sample files
+    fish_source = fish_path
+    fish_dest = f"{input_data_dir}/fish_sample"
+    if os.path.exists(fish_source):
+        shutil.copytree(fish_source, fish_dest, dirs_exist_ok=True)
+        print(f"Fish sample data copied to: {fish_dest}")
+    else:
+        print(f"Warning: Fish source directory not found: {fish_source}")
+
+    print("Jaccard similarity analysis completed successfully!")
+    print(f"Results saved to protein comparison directory: {comparison_output_dir}")
+    print(f"Jaccard results structure:")
+    print(f"  - {jaccard_output_dir}/mouse_zebrafish_100x100_jaccard.parquet (all results)")
+    print(f"  - {jaccard_output_dir}/top10_mouse_fish_jaccard.csv (top 10 matches)")
+    print(f"Shared input data:")
+    print(f"  - {input_data_dir}/mouse_sample/ (original mouse data)")
+    print(f"  - {input_data_dir}/fish_sample/ (original fish data)")
 else:
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    print(f"No sample timestamp found, using current time: {timestamp}")
-
-comparison_output_dir = f"output/protein_comparison/{timestamp}"
-jaccard_output_dir = f"{comparison_output_dir}/jaccard"
-os.makedirs(jaccard_output_dir, exist_ok=True)
-
-print(f"Saving Jaccard results to: {jaccard_output_dir}")
-
-# Save all results to Parquet
-results.write.mode("overwrite").parquet(f"{jaccard_output_dir}/mouse_zebrafish_100x100_jaccard.parquet")
-
-# For CSV output, save only essential columns
-top10_for_csv = top10.select("mouse_id", "fish_id", "jaccard")
-top10_for_csv.write.mode("overwrite").csv(f"{jaccard_output_dir}/top10_mouse_fish_jaccard.csv", header=True)
-
-# Copy input files to shared comparison directory
-print("Copying input sample files to shared comparison directory...")
-
-# Create shared input data directory
-input_data_dir = f"{comparison_output_dir}/input_data"
-os.makedirs(input_data_dir, exist_ok=True)
-
-# Copy mouse sample files
-mouse_source = mouse_path
-mouse_dest = f"{input_data_dir}/mouse_sample"
-if os.path.exists(mouse_source):
-    shutil.copytree(mouse_source, mouse_dest, dirs_exist_ok=True)
-    print(f"Mouse sample data copied to: {mouse_dest}")
-else:
-    print(f"Warning: Mouse source directory not found: {mouse_source}")
-
-# Copy fish sample files
-fish_source = fish_path
-fish_dest = f"{input_data_dir}/fish_sample"
-if os.path.exists(fish_source):
-    shutil.copytree(fish_source, fish_dest, dirs_exist_ok=True)
-    print(f"Fish sample data copied to: {fish_dest}")
-else:
-    print(f"Warning: Fish source directory not found: {fish_source}")
-
-print("Jaccard similarity analysis completed successfully!")
-print(f"Results saved to protein comparison directory: {comparison_output_dir}")
-print(f"Jaccard results structure:")
-print(f"  - {jaccard_output_dir}/mouse_zebrafish_100x100_jaccard.parquet (all results)")
-print(f"  - {jaccard_output_dir}/top10_mouse_fish_jaccard.csv (top 10 matches)")
-print(f"Shared input data:")
-print(f"  - {input_data_dir}/mouse_sample/ (original mouse data)")
-print(f"  - {input_data_dir}/fish_sample/ (original fish data)")
+    print("Skipping file save operations (no-save mode enabled)")
+    print("Jaccard similarity analysis completed - results displayed below only")
 
 # ----------------------------------------------------------
 # 🔟 Show results

@@ -4,11 +4,17 @@ from pyspark.sql.types import ArrayType, StringType
 from pyspark.ml.feature import HashingTF, MinHashLSH
 import os
 import shutil
+import sys
 from datetime import datetime
 
 # ----------------------------------------------------------
-# 0️⃣ Check working directory
+# 0️⃣ Check for no-save parameter and working directory
 # ----------------------------------------------------------
+# Check if --no-save parameter is passed
+no_save_mode = "--no-save" in sys.argv or "--dry-run" in sys.argv
+if no_save_mode:
+    print("Running in NO-SAVE mode - results will only be displayed, not saved")
+
 print("Current working directory:", os.getcwd())
 print("Files in current directory:")
 for item in os.listdir():
@@ -98,69 +104,73 @@ results = similarities.select(
 top10 = results.orderBy(col("minhash_similarity").desc()).limit(10)
 
 # ------------------------------------------------------------
-# 9️⃣ Save outputs to timestamped directory
+# 9️⃣ Save outputs to timestamped directory (unless in no-save mode)
 # ------------------------------------------------------------
-# Use sample timestamp from environment variable, or fall back to current time
-sample_timestamp = os.environ.get('SAMPLE_TIMESTAMP')
-if sample_timestamp:
-    timestamp = sample_timestamp
-    print(f"Using sample timestamp from environment: {timestamp}")
-else:
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    print(f"No sample timestamp found, using current time: {timestamp}")
-
-comparison_output_dir = f"output/protein_comparison/{timestamp}"
-minhash_output_dir = f"{comparison_output_dir}/minhash"
-os.makedirs(minhash_output_dir, exist_ok=True)
-
-print(f"Saving MinHash results to: {minhash_output_dir}")
-
-# Save all results to Parquet
-results.write.mode("overwrite").parquet(f"{minhash_output_dir}/mouse_fish_minhash_results.parquet")
-
-# Save top 10 results to CSV (essential columns only)
-top10_for_csv = top10.select("mouse_id", "fish_id", "minhash_similarity")
-top10_for_csv.write.mode("overwrite").csv(f"{minhash_output_dir}/top10_mouse_fish_minhash.csv", header=True)
-
-# Copy input files to shared comparison directory (only if not already copied)
-print("Checking for shared input data directory...")
-
-# Create shared input data directory
-input_data_dir = f"{comparison_output_dir}/input_data"
-os.makedirs(input_data_dir, exist_ok=True)
-
-# Copy mouse sample files (only if not already present)
-mouse_source = mouse_path
-mouse_dest = f"{input_data_dir}/mouse_sample"
-if not os.path.exists(mouse_dest):
-    if os.path.exists(mouse_source):
-        shutil.copytree(mouse_source, mouse_dest, dirs_exist_ok=True)
-        print(f"Mouse sample data copied to: {mouse_dest}")
+if not no_save_mode:
+    # Use sample timestamp from environment variable, or fall back to current time
+    sample_timestamp = os.environ.get('SAMPLE_TIMESTAMP')
+    if sample_timestamp:
+        timestamp = sample_timestamp
+        print(f"Using sample timestamp from environment: {timestamp}")
     else:
-        print(f"Warning: Mouse source directory not found: {mouse_source}")
-else:
-    print(f"Mouse sample data already exists at: {mouse_dest}")
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        print(f"No sample timestamp found, using current time: {timestamp}")
 
-# Copy fish sample files (only if not already present)
-fish_source = fish_path
-fish_dest = f"{input_data_dir}/fish_sample"
-if not os.path.exists(fish_dest):
-    if os.path.exists(fish_source):
-        shutil.copytree(fish_source, fish_dest, dirs_exist_ok=True)
-        print(f"Fish sample data copied to: {fish_dest}")
+    comparison_output_dir = f"output/protein_comparison/{timestamp}"
+    minhash_output_dir = f"{comparison_output_dir}/minhash"
+    os.makedirs(minhash_output_dir, exist_ok=True)
+
+    print(f"Saving MinHash results to: {minhash_output_dir}")
+
+    # Save all results to Parquet
+    results.write.mode("overwrite").parquet(f"{minhash_output_dir}/mouse_fish_minhash_results.parquet")
+
+    # Save top 10 results to CSV (essential columns only)
+    top10_for_csv = top10.select("mouse_id", "fish_id", "minhash_similarity")
+    top10_for_csv.write.mode("overwrite").csv(f"{minhash_output_dir}/top10_mouse_fish_minhash.csv", header=True)
+
+    # Copy input files to shared comparison directory (only if not already copied)
+    print("Checking for shared input data directory...")
+
+    # Create shared input data directory
+    input_data_dir = f"{comparison_output_dir}/input_data"
+    os.makedirs(input_data_dir, exist_ok=True)
+
+    # Copy mouse sample files (only if not already present)
+    mouse_source = mouse_path
+    mouse_dest = f"{input_data_dir}/mouse_sample"
+    if not os.path.exists(mouse_dest):
+        if os.path.exists(mouse_source):
+            shutil.copytree(mouse_source, mouse_dest, dirs_exist_ok=True)
+            print(f"Mouse sample data copied to: {mouse_dest}")
+        else:
+            print(f"Warning: Mouse source directory not found: {mouse_source}")
     else:
-        print(f"Warning: Fish source directory not found: {fish_source}")
-else:
-    print(f"Fish sample data already exists at: {fish_dest}")
+        print(f"Mouse sample data already exists at: {mouse_dest}")
 
-print("MinHash similarity analysis completed successfully!")
-print(f"Results saved to protein comparison directory: {comparison_output_dir}")
-print(f"MinHash results structure:")
-print(f"  - {minhash_output_dir}/mouse_fish_minhash_results.parquet (all results)")
-print(f"  - {minhash_output_dir}/top10_mouse_fish_minhash.csv (top 10 matches)")
-print(f"Shared input data:")
-print(f"  - {input_data_dir}/mouse_sample/ (original mouse data)")
-print(f"  - {input_data_dir}/fish_sample/ (original fish data)")
+    # Copy fish sample files (only if not already present)
+    fish_source = fish_path
+    fish_dest = f"{input_data_dir}/fish_sample"
+    if not os.path.exists(fish_dest):
+        if os.path.exists(fish_source):
+            shutil.copytree(fish_source, fish_dest, dirs_exist_ok=True)
+            print(f"Fish sample data copied to: {fish_dest}")
+        else:
+            print(f"Warning: Fish source directory not found: {fish_source}")
+    else:
+        print(f"Fish sample data already exists at: {fish_dest}")
+
+    print("MinHash similarity analysis completed successfully!")
+    print(f"Results saved to protein comparison directory: {comparison_output_dir}")
+    print(f"MinHash results structure:")
+    print(f"  - {minhash_output_dir}/mouse_fish_minhash_results.parquet (all results)")
+    print(f"  - {minhash_output_dir}/top10_mouse_fish_minhash.csv (top 10 matches)")
+    print(f"Shared input data:")
+    print(f"  - {input_data_dir}/mouse_sample/ (original mouse data)")
+    print(f"  - {input_data_dir}/fish_sample/ (original fish data)")
+else:
+    print("Skipping file save operations (no-save mode enabled)")
+    print("MinHash similarity analysis completed - results displayed below only")
 
 # ------------------------------------------------------------
 # 🔟 Show results
