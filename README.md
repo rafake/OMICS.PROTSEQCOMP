@@ -144,16 +144,17 @@ pyspark
 
 #### Multi-Dataset Batch Sampling
 
-For processing multiple datasets automatically, use the batch job system:
+For processing multiple datasets automatically, use the batch job system to create samples for downstream analysis:
 
 📄 **`multi_dataset_sampling_batch.sh`** - Automated batch processing script
 
 This SLURM batch job will:
 
 - 🔍 **Scan input directory** for datasets with parquet files or "parquet" in the name
-- 🎲 **Create 100 random samples** from each dataset using `rdd.takeSample()`
-- 💾 **Save timestamped results** to `output/samples_parquet/`
+- 🎲 **Create 100 random samples** from each dataset using PySpark's `orderBy(rand()).limit(100)`
+- 💾 **Save timestamped results** to `output/sample_parquet/sample_YYYYMMDD_HHMMSS/`
 - ⚡ **Process multiple datasets** in a single job submission
+- 🗂️ **Organize output** with timestamp-based directory structure for easy tracking
 
 **Setup and Usage:**
 
@@ -175,17 +176,94 @@ This SLURM batch job will:
 3. **Check results:**
    ```
    output/
-   └── samples_parquet/
-       ├── mus_musculus_parquet_100_YYYYMMDD_HHMMSS/
-       ├── zebrafish_parquet_100_YYYYMMDD_HHMMSS/
-       └── other_dataset_parquet_100_YYYYMMDD_HHMMSS/
+   └── sample_parquet/
+       └── sample_YYYYMMDD_HHMMSS/
+           ├── mus_musculus_parquet_100.parquet
+           ├── zebrafish_parquet_100.parquet
+           └── other_dataset_parquet_100.parquet
    ```
 
-**Sampling Note**: For 100 samples, use `rdd.takeSample()` as shown in `sampling_commands.py`. For larger samples, use `sample()` method with calculated fraction or `orderBy(rand()).limit()`.
+**Key Features:**
 
-### Task 5: [Coming Next] 🚧
+- **Reproducible sampling**: Uses PySpark's distributed sampling for consistent results
+- **Timestamp organization**: Each batch run creates a unique timestamped directory
+- **Efficient processing**: Leverages Spark's distributed computing capabilities
+- **Flexible input**: Automatically detects and processes all parquet datasets
 
-_Description will be added as the project progresses..._
+### Task 5: Jaccard Similarity Analysis 🧮
+
+**Objective**: Compare protein sequences between species using k-mer analysis and Jaccard similarity
+
+This task implements pairwise protein sequence comparison between mouse and zebrafish using k-mer decomposition and Jaccard similarity metrics to identify potentially homologous proteins.
+
+#### Analysis Overview
+
+The Jaccard similarity analysis performs the following operations:
+
+1. **K-mer Extraction**: Decomposes protein sequences into overlapping 3-mers (tripeptides)
+2. **Pairwise Comparison**: Creates all possible combinations between mouse and zebrafish samples (100 × 100 = 10,000 pairs)
+3. **Similarity Calculation**: Computes Jaccard similarity coefficient for each pair
+4. **Results Ranking**: Identifies and ranks the most similar protein pairs
+
+#### Running the Analysis
+
+**Interactive Execution:**
+
+```python
+# Run the Jaccard analysis script directly
+python jaccard.py
+```
+
+**Batch Job Execution:**
+
+For automated processing on HPC systems, use the SLURM batch script:
+
+� **`jaccard_batch.sh`** - Automated Jaccard similarity analysis
+
+```bash
+# Submit the batch job
+sbatch jaccard_batch.sh
+```
+
+#### Batch Job Features
+
+The `jaccard_batch.sh` script provides:
+
+- 🎯 **Environment Integration**: Automatically detects and uses the latest sample data from `output/sample_parquet/`
+- 🕐 **Timestamped Results**: Creates unique output directories with format `jaccard_YYYYMMDD_HHMMSS`
+- 💾 **Complete Data Package**: Saves both analysis results and original input data for reproducibility
+- ⚡ **HPC Optimization**: Configured for SLURM job scheduler with appropriate resource allocation
+
+#### Output Structure
+
+Each analysis run creates a comprehensive results package:
+
+```
+output/
+└── jaccard_results/
+    └── jaccard_YYYYMMDD_HHMMSS/
+        ├── mouse_zebrafish_100x100_jaccard.parquet    # All pairwise comparisons
+        ├── top10_mouse_fish_jaccard.csv               # Top 10 most similar pairs
+        ├── input_mouse_parquet/                       # Original mouse sample data
+        └── input_fish_parquet/                        # Original zebrafish sample data
+```
+
+#### Key Analysis Features
+
+- **🔬 K-mer Analysis**: Extracts unique 3-mers from protein sequences for comparison
+- **📊 Jaccard Coefficient**: Measures similarity as intersection over union of k-mer sets
+- **⚡ Distributed Computing**: Leverages PySpark for efficient parallel processing
+- **🎯 Top Matches**: Identifies and displays the 10 most similar protein pairs
+- **📈 Scalable Design**: Handles large-scale protein comparisons efficiently
+
+#### Interpretation
+
+The Jaccard similarity score ranges from 0 to 1:
+
+- **1.0**: Identical k-mer composition (potentially homologous)
+- **0.5-0.9**: High similarity (likely related proteins)
+- **0.1-0.5**: Moderate similarity (possible functional relationship)
+- **0.0**: No shared k-mers (likely unrelated)
 
 ### Task 6: [Coming Next] 🚧
 
