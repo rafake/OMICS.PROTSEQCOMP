@@ -53,14 +53,18 @@ fish_kmers  = fish_sample.withColumn("kmers", get_kmers_udf(col("sequence")))
 # ----------------------------------------------------------
 # 5️⃣ Create all pairwise combinations (100 x 100 = 10,000)
 # ----------------------------------------------------------
-pairs = mouse_kmers.crossJoin(fish_kmers) \
+# First alias the DataFrames to avoid column name conflicts
+mouse_kmers_aliased = mouse_kmers.alias("mouse")
+fish_kmers_aliased = fish_kmers.alias("fish")
+
+pairs = mouse_kmers_aliased.crossJoin(fish_kmers_aliased) \
     .select(
-        col("name").alias("mouse_id"),
-        col("sequence").alias("mouse_seq"),
-        col("kmers").alias("mouse_kmers"),
-        col("name_1").alias("fish_id"),
-        col("sequence_1").alias("fish_seq"),
-        col("kmers_1").alias("fish_kmers")
+        col("mouse.name").alias("mouse_id"),
+        col("mouse.sequence").alias("mouse_seq"),
+        col("mouse.kmers").alias("mouse_kmers"),
+        col("fish.name").alias("fish_id"),
+        col("fish.sequence").alias("fish_seq"),
+        col("fish.kmers").alias("fish_kmers")
     )
 
 # ----------------------------------------------------------
