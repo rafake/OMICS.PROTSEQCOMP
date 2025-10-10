@@ -9,7 +9,7 @@ This project focuses on protein sequence comparison and analysis using modern bi
 
 ## 🔬 Project Workflow
 
-This project consists of 7 main tasks that demonstrate protein sequence analysis using comparative genomics approaches:
+This project consists of 6 main tasks that demonstrate protein sequence analysis using comparative genomics approaches:
 
 ### Task 1: Setting up Apptainer with ADAM ⚙️
 
@@ -315,37 +315,44 @@ The Jaccard similarity score ranges from 0 to 1:
 
 ### Task 6: Performance Benchmarking ⚡
 
-**Objective**: Measure and analyze computational performance across different CPU configurations
+**Objective**: Measure and analyze computational performance across different CPU configurations using automated SLURM array jobs
 
-This task evaluates the scalability and performance characteristics of the protein comparison algorithms using systematic benchmarking across multiple CPU core configurations.
+This task evaluates the scalability and performance characteristics of the protein comparison algorithms using systematic benchmarking across multiple CPU core configurations with a single command execution.
 
 #### Benchmark Features
 
-📄 **`benchmark.sh`** - Automated performance measurement script
+📄 **`benchmark.sh`** - Automated multi-core performance measurement script
 
 The benchmark system provides:
 
 - 🎯 **Automated Execution**: Uses the latest sample data for consistent benchmarking
 - ⏱️ **Detailed Timing**: Comprehensive resource usage measurement with `/usr/bin/time -v`
-- 🔧 **Configurable Cores**: Easy adjustment of CPU core allocation for scalability testing
+- � **SLURM Array Jobs**: Automatically tests 5 different CPU configurations (1, 2, 4, 8, 16 cores)
 - 📊 **Organized Results**: Timestamped output files for performance analysis
 - 🔀 **Multiple Methods**: Supports benchmarking both Jaccard and MinHash algorithms
 - 🚀 **Pure Performance**: Always runs analysis scripts in no-save mode for accurate timing
+- ⚡ **Single Command**: One submission automatically benchmarks all core configurations
 
 #### Usage
 
-To run performance benchmarks, specify the comparison method as a required parameter:
+To run comprehensive performance benchmarks across all CPU configurations, specify the comparison method as a required parameter:
 
 ```bash
-# Modify CPU core count in benchmark.sh (default: 4 cores)
-#SBATCH -c 4    # Change this value (2, 4, 8, 16, etc.)
-
-# Benchmark Jaccard similarity analysis
+# Benchmark Jaccard similarity analysis across 1, 2, 4, 8, 16 cores
 sbatch benchmark.sh jaccard
 
-# Benchmark MinHash similarity analysis
+# Benchmark MinHash similarity analysis across 1, 2, 4, 8, 16 cores
 sbatch benchmark.sh minhash
 ```
+
+**SLURM Array Job System:**
+The benchmark script uses `#SBATCH --array=0-4` to automatically submit 5 separate tasks, each with a different CPU core configuration:
+
+- **Array Task 0**: 1 CPU core
+- **Array Task 1**: 2 CPU cores
+- **Array Task 2**: 4 CPU cores
+- **Array Task 3**: 8 CPU cores
+- **Array Task 4**: 16 CPU cores
 
 **Available Methods:**
 
@@ -369,16 +376,22 @@ sbatch benchmark.sh invalid
 
 #### Output
 
-Benchmark results are organized by sample timestamp and method:
+Benchmark results are automatically organized by sample timestamp and CPU core count:
 
 ```
 output/
 └── benchmark_results/
     └── YYYYMMDD_HHMMSS/                    # Sample timestamp
-        ├── jaccard_benchmark_4cores.out    # Jaccard 4-core benchmark
-        ├── jaccard_benchmark_8cores.out    # Jaccard 8-core benchmark
-        ├── minhash_benchmark_4cores.out    # MinHash 4-core benchmark
-        └── minhash_benchmark_8cores.out    # MinHash 8-core benchmark
+        ├── jaccard_benchmark_1cores.out    # 1-core Jaccard benchmark
+        ├── jaccard_benchmark_2cores.out    # 2-core Jaccard benchmark
+        ├── jaccard_benchmark_4cores.out    # 4-core Jaccard benchmark
+        ├── jaccard_benchmark_8cores.out    # 8-core Jaccard benchmark
+        ├── jaccard_benchmark_16cores.out   # 16-core Jaccard benchmark
+        ├── minhash_benchmark_1cores.out    # 1-core MinHash benchmark
+        ├── minhash_benchmark_2cores.out    # 2-core MinHash benchmark
+        ├── minhash_benchmark_4cores.out    # 4-core MinHash benchmark
+        ├── minhash_benchmark_8cores.out    # 8-core MinHash benchmark
+        └── minhash_benchmark_16cores.out   # 16-core MinHash benchmark
 ```
 
 **Key Features:**
@@ -388,13 +401,29 @@ output/
 - **⚙️ Core Configuration**: Filename includes CPU core count for easy identification
 - **🚀 Pure Computation**: Analysis scripts run in no-save mode for accurate performance measurement
 - **📊 Comprehensive Metrics**: Each file contains detailed execution time, memory usage, and CPU utilization
+- **🔢 Complete Coverage**: Single command generates comprehensive scalability analysis
 
-**Performance Comparison:**
-This structure enables easy comparison of:
+**Performance Analysis:**
+This automated system enables comprehensive analysis of:
 
-- Different CPU core counts for the same method
-- Jaccard vs MinHash performance on identical data
-- Scalability characteristics across different configurations
+- CPU core scalability (1 → 16 cores performance scaling)
+- Algorithm comparison (Jaccard vs MinHash efficiency)
+- Resource utilization patterns across different configurations
+- Optimal core count determination for specific workloads
+
+**Job Monitoring:**
+Monitor array job progress with standard SLURM commands:
+
+```bash
+# Check job status
+squeue -u $USER
+
+# View specific array task output
+squeue -j <job_id>_<array_index>
+
+# Check all array tasks
+scontrol show job <job_id>
+```
 
 ## 📚 Dependencies
 
