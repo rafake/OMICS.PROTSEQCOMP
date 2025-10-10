@@ -10,9 +10,28 @@
 # Set up environment
 APPTAINER=$HOME/zadanie/1_environment/apptainer_local/bin/apptainer
 
-echo "Note: Jaccard script runs in no-save mode for pure performance measurement"
+# Check for required comparison method parameter
+if [[ -z "$1" ]]; then
+    echo "Error: Missing required parameter!"
+    echo "Usage: sbatch benchmark.sh <comparison_method>"
+    echo "Available methods:"
+    echo "  jaccard  - Benchmark Jaccard similarity analysis"
+    echo "  minhash  - Benchmark MinHash similarity analysis"
+    exit 1
+fi
+
+COMPARISON_METHOD="$1"
+
+# Validate comparison method
+if [[ "$COMPARISON_METHOD" != "jaccard" && "$COMPARISON_METHOD" != "minhash" ]]; then
+    echo "Error: Invalid comparison method '$COMPARISON_METHOD'"
+    echo "Available methods: jaccard, minhash"
+    exit 1
+fi
 
 echo "Starting OMICS benchmark job..."
+echo "Benchmarking: $COMPARISON_METHOD analysis"
+echo "Note: $COMPARISON_METHOD script runs in no-save mode for pure performance measurement"
 echo "Start time: $(date)"
 echo "Using $SLURM_CPUS_PER_TASK CPU cores"
 
@@ -45,29 +64,35 @@ fi
 MOUSE_ADAM_PATH="${ADAM_FILES[0]}"
 FISH_ADAM_PATH="${ADAM_FILES[1]}"
 
-echo "Using files for benchmark:"
+echo "Using files for $COMPARISON_METHOD benchmark:"
 echo "  File 1 (mouse): $MOUSE_ADAM_PATH"
 echo "  File 2 (fish): $FISH_ADAM_PATH"
 
 # Export file paths and sample timestamp for the Python script to use
-export MOUSE_ADAM_PATH
-export FISH_ADAM_PATH
+if [[ "$COMPARISON_METHOD" == "jaccard" ]]; then
+    export MOUSE_ADAM_PATH
+    export FISH_ADAM_PATH
+else
+    # For minhash, use PARQUET_PATH variables
+    export MOUSE_PARQUET_PATH="$MOUSE_ADAM_PATH"
+    export FISH_PARQUET_PATH="$FISH_ADAM_PATH"
+fi
 export SAMPLE_TIMESTAMP
 
 # Create output directory for benchmark results
 mkdir -p output/benchmark_results/${SAMPLE_TIMESTAMP}
 
 # Benchmark command with time measurement
-echo "Running benchmark with $SLURM_CPUS_PER_TASK cores..."
-echo "Jaccard script running in no-save mode for pure computation timing..."
+echo "Running $COMPARISON_METHOD benchmark with $SLURM_CPUS_PER_TASK cores..."
+echo "$COMPARISON_METHOD script running in no-save mode for pure computation timing..."
 
 # Run benchmark and save results to timestamped directory
 srun -N 1 -n 1 -c $SLURM_CPUS_PER_TASK \
 /usr/bin/time -v \
 $APPTAINER exec docker://quay.io/biocontainers/adam:1.0.1--hdfd78af_0 \
-python jaccard.py --no-save \
-> output/benchmark_results/${SAMPLE_TIMESTAMP}/jaccard_benchmark_${SLURM_CPUS_PER_TASK}cores.out 2>&1
+python ${COMPARISON_METHOD}.py --no-save \
+> output/benchmark_results/${SAMPLE_TIMESTAMP}/${COMPARISON_METHOD}_benchmark_${SLURM_CPUS_PER_TASK}cores.out 2>&1
 
-echo "Benchmark completed!"
+echo "$COMPARISON_METHOD benchmark completed!"
 echo "End time: $(date)"
-echo "Results saved to: output/benchmark_results/${SAMPLE_TIMESTAMP}/jaccard_benchmark_${SLURM_CPUS_PER_TASK}cores.out"
+echo "Results saved to: output/benchmark_results/${SAMPLE_TIMESTAMP}/${COMPARISON_METHOD}_benchmark_${SLURM_CPUS_PER_TASK}cores.out"
