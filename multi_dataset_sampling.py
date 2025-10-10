@@ -8,6 +8,26 @@ from datetime import datetime
 # Get dataset info from environment/variables
 dataset_name = globals().get('dataset_name', 'unknown')
 input_path = globals().get('input_path', 'input/')
+batch_output_dir = globals().get('batch_output_dir', None)
+batch_timestamp = globals().get('batch_timestamp', None)
+
+# If not running from batch script, find latest sample directory
+if batch_output_dir is None or batch_timestamp is None:
+    import glob
+    sample_dirs = glob.glob("output/samples_parquet/sample_*")
+    if sample_dirs:
+        # Sort by directory name (which includes timestamp) and get the latest
+        latest_sample_dir = sorted(sample_dirs)[-1]
+        batch_output_dir = latest_sample_dir
+        # Extract timestamp from directory name
+        batch_timestamp = latest_sample_dir.split('sample_')[-1]
+        print(f"Using latest sample directory: {latest_sample_dir}")
+    else:
+        # Create new timestamped directory if none exist
+        batch_timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        batch_output_dir = f"output/samples_parquet/sample_{batch_timestamp}"
+        os.makedirs(batch_output_dir, exist_ok=True)
+        print(f"Created new sample directory: {batch_output_dir}")
 
 # Initialize Spark session
 spark = SparkSession.builder \
@@ -51,9 +71,8 @@ try:
         print("Sample preview:")
         df_sample.show(5, truncate=False)
         
-        # Save to Parquet format (single file) with timestamp
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        output_parquet = f"output/samples_parquet/{dataset_name}_100_{timestamp}"
+        # Save to Parquet format (single file) with batch timestamp
+        output_parquet = f"{batch_output_dir}/{batch_timestamp}_100_{dataset_name}"
         print(f"Saving samples to Parquet: {output_parquet}")
         df_sample.coalesce(1).write.mode("overwrite").parquet(output_parquet)
         

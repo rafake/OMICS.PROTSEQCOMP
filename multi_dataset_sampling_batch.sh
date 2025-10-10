@@ -10,10 +10,14 @@
 
 APPTAINER=$HOME/zadanie/1_environment/apptainer_local/bin/apptainer
 
-# Create output directories
-mkdir -p output/samples_parquet
+# Create timestamped output directory for this batch run
+BATCH_TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
+BATCH_OUTPUT_DIR="output/samples_parquet/sample_${BATCH_TIMESTAMP}"
+mkdir -p "$BATCH_OUTPUT_DIR"
 
 echo "Starting multi-dataset sampling job..."
+echo "Batch timestamp: $BATCH_TIMESTAMP"
+echo "Output directory: $BATCH_OUTPUT_DIR"
 
 # Iterate through directories in input folder
 for input_dir in input/*/; do
@@ -31,6 +35,8 @@ import sys
 sys.path.append('.')
 dataset_name = '$dataset_name'
 input_path = '$input_dir'
+batch_output_dir = '$BATCH_OUTPUT_DIR'
+batch_timestamp = '$BATCH_TIMESTAMP'
 exec(open('multi_dataset_sampling.py').read())
 "
             
