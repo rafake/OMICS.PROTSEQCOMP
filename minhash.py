@@ -118,8 +118,9 @@ print(f"Saving MinHash results to: {minhash_output_dir}")
 # Save all results to Parquet
 results.write.mode("overwrite").parquet(f"{minhash_output_dir}/mouse_fish_minhash_results.parquet")
 
-# Save top 10 results to CSV
-top10.write.mode("overwrite").csv(f"{minhash_output_dir}/top10_mouse_fish_minhash.csv", header=True)
+# Save top 10 results to CSV (essential columns only)
+top10_for_csv = top10.select("mouse_id", "fish_id", "minhash_similarity")
+top10_for_csv.write.mode("overwrite").csv(f"{minhash_output_dir}/top10_mouse_fish_minhash.csv", header=True)
 
 # Copy input files to shared comparison directory (only if not already copied)
 print("Checking for shared input data directory...")

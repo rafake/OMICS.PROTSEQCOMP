@@ -115,8 +115,8 @@ print(f"Saving Jaccard results to: {jaccard_output_dir}")
 # Save all results to Parquet
 results.write.mode("overwrite").parquet(f"{jaccard_output_dir}/mouse_zebrafish_100x100_jaccard.parquet")
 
-# For CSV output, exclude array columns (CSV doesn't support complex types)
-top10_for_csv = top10.select("mouse_id", "mouse_seq", "fish_id", "fish_seq", "jaccard")
+# For CSV output, save only essential columns
+top10_for_csv = top10.select("mouse_id", "fish_id", "jaccard")
 top10_for_csv.write.mode("overwrite").csv(f"{jaccard_output_dir}/top10_mouse_fish_jaccard.csv", header=True)
 
 # Copy input files to shared comparison directory
