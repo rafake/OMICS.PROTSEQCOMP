@@ -176,11 +176,11 @@ This SLURM batch job will:
 3. **Check results:**
    ```
    output/
-   └── sample_parquet/
+   └── samples_parquet/
        └── sample_YYYYMMDD_HHMMSS/
-           ├── mus_musculus_parquet_100.parquet
-           ├── zebrafish_parquet_100.parquet
-           └── other_dataset_parquet_100.parquet
+           ├── YYYYMMDD_HHMMSS_100_mouse_protein_output.adam
+           ├── YYYYMMDD_HHMMSS_100_zebrafish_protein_output.adam
+           └── other_dataset_output.adam
    ```
 
 **Key Features:**
@@ -229,23 +229,28 @@ sbatch jaccard_batch.sh
 
 The `jaccard_batch.sh` script provides:
 
-- 🎯 **Environment Integration**: Automatically detects and uses the latest sample data from `output/sample_parquet/`
-- 🕐 **Timestamped Results**: Creates unique output directories with format `jaccard_YYYYMMDD_HHMMSS`
+- 🎯 **Environment Integration**: Automatically detects and uses the latest sample data from `output/samples_parquet/`
+- 🕐 **Timestamped Results**: Uses sample timestamp for consistent directory naming
 - 💾 **Complete Data Package**: Saves both analysis results and original input data for reproducibility
 - ⚡ **HPC Optimization**: Configured for SLURM job scheduler with appropriate resource allocation
 
 #### Output Structure
 
-Each analysis run creates a comprehensive results package:
+Both Jaccard and MinHash analyses are now organized in a unified comparison structure:
 
 ```
 output/
-└── jaccard_results/
-    └── jaccard_YYYYMMDD_HHMMSS/
-        ├── mouse_zebrafish_100x100_jaccard.parquet    # All pairwise comparisons
-        ├── top10_mouse_fish_jaccard.csv               # Top 10 most similar pairs
-        ├── input_mouse_parquet/                       # Original mouse sample data
-        └── input_fish_parquet/                        # Original zebrafish sample data
+└── protein_comparison/
+    └── YYYYMMDD_HHMMSS/                    # Sample timestamp
+        ├── jaccard/
+        │   ├── mouse_zebrafish_100x100_jaccard.parquet
+        │   └── top10_mouse_fish_jaccard.csv
+        ├── minhash/
+        │   ├── mouse_fish_minhash_results.parquet
+        │   └── top10_mouse_fish_minhash.csv
+        └── input_data/                     # Shared input data
+            ├── mouse_sample/               # Original mouse sample
+            └── fish_sample/                # Original zebrafish sample
 ```
 
 #### Key Analysis Features
@@ -265,9 +270,43 @@ The Jaccard similarity score ranges from 0 to 1:
 - **0.1-0.5**: Moderate similarity (possible functional relationship)
 - **0.0**: No shared k-mers (likely unrelated)
 
-### Task 6: [Coming Next] 🚧
+### Task 6: Performance Benchmarking ⚡
 
-_Description will be added as the project progresses..._
+**Objective**: Measure and analyze computational performance across different CPU configurations
+
+This task evaluates the scalability and performance characteristics of the protein comparison algorithms using systematic benchmarking across multiple CPU core configurations.
+
+#### Benchmark Features
+
+📄 **`benchmark.sh`** - Automated performance measurement script
+
+The benchmark system provides:
+
+- 🎯 **Automated Execution**: Uses the latest sample data for consistent benchmarking
+- ⏱️ **Detailed Timing**: Comprehensive resource usage measurement with `/usr/bin/time -v`
+- 🔧 **Configurable Cores**: Easy adjustment of CPU core allocation for scalability testing
+- 📊 **Organized Results**: Timestamped output files for performance analysis
+
+#### Usage
+
+To run performance benchmarks:
+
+```bash
+# Modify CPU core count in benchmark.sh (default: 4 cores)
+#SBATCH -c 4    # Change this value (2, 4, 8, 16, etc.)
+
+# Submit benchmark job
+sbatch benchmark.sh
+```
+
+#### Output
+
+Benchmark results are saved as:
+```
+output/benchmark_results/jaccard_benchmark_4cores_YYYYMMDD_HHMMSS.out
+```
+
+Each benchmark file contains detailed performance metrics including execution time, memory usage, and CPU utilization statistics.
 
 ### Task 7: [Coming Next] 🚧a
 
