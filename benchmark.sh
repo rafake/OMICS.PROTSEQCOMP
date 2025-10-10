@@ -2,7 +2,7 @@
 #SBATCH -J OMICS-multi-benchmark    # job name
 #SBATCH -N 1                        # number of nodes (1 node is sufficient)
 #SBATCH -n 1                        # number of tasks (1 task)
-#SBATCH --time=02:00:00             # longer time limit for multiple runs
+#SBATCH --time=00:05:00             # longer time limit for multiple runs
 #SBATCH -A g100-2238                # your computational grant
 #SBATCH -p topola                   # partition, i.e., "queue"
 
@@ -89,9 +89,8 @@ for CORES in "${CORE_COUNTS[@]}"; do
     
     # Run benchmark using srun with specified core count
     srun -N 1 -n 1 -c $CORES \
-    /usr/bin/time -v \
     $APPTAINER exec docker://quay.io/biocontainers/adam:1.0.1--hdfd78af_0 \
-    python ${COMPARISON_METHOD}.py --no-save \
+    bash -c "time python ${COMPARISON_METHOD}.py --no-save" \
     > output/benchmark_results/${SAMPLE_TIMESTAMP}/${COMPARISON_METHOD}_benchmark_${CORES}cores.out 2>&1
     
     # Check if the benchmark completed successfully
