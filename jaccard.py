@@ -21,8 +21,15 @@ spark = SparkSession.builder \
 # ----------------------------------------------------------
 # 2️⃣ Load Parquet / ADAM data
 # ----------------------------------------------------------
-mouse_df = spark.read.format("parquet").load("mouse.adam")
-fish_df  = spark.read.format("parquet").load("danio.adam")
+# Get file paths from environment variables or use defaults
+mouse_path = os.environ.get('MOUSE_ADAM_PATH', 'mouse.adam')
+fish_path = os.environ.get('FISH_ADAM_PATH', 'danio.adam')
+
+print(f"Loading mouse data from: {mouse_path}")
+print(f"Loading fish data from: {fish_path}")
+
+mouse_df = spark.read.format("parquet").load(mouse_path)
+fish_df  = spark.read.format("parquet").load(fish_path)
 
 # ----------------------------------------------------------
 # 3️⃣ Sample 100 random sequences from each species
