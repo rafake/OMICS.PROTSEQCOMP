@@ -18,10 +18,10 @@ echo "Start time: $(date)"
 mkdir -p output/minhash_results
 
 # Find the latest sample directory based on timestamp
-SAMPLE_DIRS=($(find output/sample_parquet -name "sample_*" -type d | sort))
+SAMPLE_DIRS=($(find output/samples_parquet -name "sample_*" -type d | sort))
 
 if [ ${#SAMPLE_DIRS[@]} -eq 0 ]; then
-    echo "Error: No sample directories found in output/sample_parquet/"
+    echo "Error: No sample directories found in output/samples_parquet/"
     echo "Please run multi_dataset_sampling_batch.sh first to generate samples."
     exit 1
 fi
