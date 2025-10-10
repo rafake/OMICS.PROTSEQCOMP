@@ -92,11 +92,10 @@ for CORES in "${CORE_COUNTS[@]}"; do
     echo "Start time for $CORES cores: $(date)"
     echo "========================================="
     
-    # Run benchmark using srun with specified core count and built-in /usr/bin/time -v
+    # Run benchmark using srun with specified core count
     srun -N 1 -n 1 -c $CORES \
-    /usr/bin/time -v \
     $APPTAINER exec docker://quay.io/biocontainers/adam:1.0.1--hdfd78af_0 \
-    python ${COMPARISON_METHOD}.py --no-save \
+    bash -c "time python ${COMPARISON_METHOD}.py --no-save" \
     > output/benchmark_results/${SAMPLE_TIMESTAMP}/${COMPARISON_METHOD}_benchmark_${CORES}cores.out 2>&1
     
     # Check if the benchmark completed successfully
