@@ -256,12 +256,14 @@ The batch scripts (`jaccard_batch.sh`, `minhash_batch.sh`) provide:
 Both analysis scripts support a special no-save mode for testing and development:
 
 **Features:**
+
 - 📺 **Console Output Only**: Results displayed in job output, no files created
 - 🚀 **Faster Execution**: Skips all file I/O operations for pure computation timing
 - 💾 **No Disk Usage**: Zero storage consumption during analysis
 - 🧪 **Perfect for Testing**: Ideal for script validation and debugging
 
 **Usage:**
+
 ```bash
 # Interactive mode
 python jaccard.py --no-save
@@ -327,36 +329,72 @@ The benchmark system provides:
 - ⏱️ **Detailed Timing**: Comprehensive resource usage measurement with `/usr/bin/time -v`
 - 🔧 **Configurable Cores**: Easy adjustment of CPU core allocation for scalability testing
 - 📊 **Organized Results**: Timestamped output files for performance analysis
+- 🔀 **Multiple Methods**: Supports benchmarking both Jaccard and MinHash algorithms
+- 🚀 **Pure Performance**: Always runs analysis scripts in no-save mode for accurate timing
 
 #### Usage
 
-To run performance benchmarks:
+To run performance benchmarks, specify the comparison method as a required parameter:
 
 ```bash
 # Modify CPU core count in benchmark.sh (default: 4 cores)
 #SBATCH -c 4    # Change this value (2, 4, 8, 16, etc.)
 
-# Submit benchmark job (with result files)
-sbatch benchmark.sh
+# Benchmark Jaccard similarity analysis
+sbatch benchmark.sh jaccard
 
-# Submit benchmark in no-save mode (console output only)
-sbatch benchmark.sh --no-save
+# Benchmark MinHash similarity analysis
+sbatch benchmark.sh minhash
+```
+
+**Available Methods:**
+
+- `jaccard` - Benchmark Jaccard similarity analysis with k-mer comparison
+- `minhash` - Benchmark MinHash similarity analysis with LSH approximation
+
+**Error Handling:**
+The script validates input parameters and provides clear error messages:
+
+```bash
+# Missing parameter
+sbatch benchmark.sh
+# Error: Missing required parameter!
+# Usage: sbatch benchmark.sh <comparison_method>
+
+# Invalid method
+sbatch benchmark.sh invalid
+# Error: Invalid comparison method 'invalid'
+# Available methods: jaccard, minhash
 ```
 
 #### Output
 
-**Normal Mode:**
-Benchmark results are saved as:
+Benchmark results are organized by sample timestamp and method:
+
 ```
-output/benchmark_results/jaccard_benchmark_4cores_YYYYMMDD_HHMMSS.out
+output/
+└── benchmark_results/
+    └── YYYYMMDD_HHMMSS/                    # Sample timestamp
+        ├── jaccard_benchmark_4cores.out    # Jaccard 4-core benchmark
+        ├── jaccard_benchmark_8cores.out    # Jaccard 8-core benchmark
+        ├── minhash_benchmark_4cores.out    # MinHash 4-core benchmark
+        └── minhash_benchmark_8cores.out    # MinHash 8-core benchmark
 ```
 
-**No-Save Mode:**
-- Timing results displayed directly in SLURM job output
-- No benchmark files created
-- Pure performance measurement without I/O overhead
+**Key Features:**
 
-Each benchmark includes detailed performance metrics: execution time, memory usage, and CPU utilization statistics.
+- **📁 Organized by Sample**: Each benchmark run uses the same sample data timestamp
+- **🔬 Method-Specific**: Clear separation between Jaccard and MinHash results
+- **⚙️ Core Configuration**: Filename includes CPU core count for easy identification
+- **🚀 Pure Computation**: Analysis scripts run in no-save mode for accurate performance measurement
+- **📊 Comprehensive Metrics**: Each file contains detailed execution time, memory usage, and CPU utilization
+
+**Performance Comparison:**
+This structure enables easy comparison of:
+
+- Different CPU core counts for the same method
+- Jaccard vs MinHash performance on identical data
+- Scalability characteristics across different configurations
 
 ### Task 7: [Coming Next] 🚧a
 
