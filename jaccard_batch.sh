@@ -3,7 +3,7 @@
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=4
-#SBATCH --mem=8000
+#SBATCH --mem=5000
 #SBATCH --partition topola
 #SBATCH --time=0:01:00
 #SBATCH -A g100-2238
