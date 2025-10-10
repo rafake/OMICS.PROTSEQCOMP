@@ -396,10 +396,6 @@ This structure enables easy comparison of:
 - Jaccard vs MinHash performance on identical data
 - Scalability characteristics across different configurations
 
-### Task 7: [Coming Next] 🚧a
-
-_Description will be added as the project progresses..._
-
 ## 📚 Dependencies
 
 - **Apptainer**: Container platform for HPC environments
