@@ -10,6 +10,13 @@
 # Set up environment
 APPTAINER=$HOME/zadanie/1_environment/apptainer_local/bin/apptainer
 
+# Check for no-save parameter
+NO_SAVE_FLAG=""
+if [[ "$1" == "--no-save" || "$1" == "--dry-run" ]]; then
+    NO_SAVE_FLAG="--no-save"
+    echo "Running in NO-SAVE mode - results will only be displayed, not saved"
+fi
+
 echo "Starting OMICS benchmark job..."
 echo "Start time: $(date)"
 echo "Using $SLURM_CPUS_PER_TASK CPU cores"
@@ -52,17 +59,33 @@ export MOUSE_ADAM_PATH
 export FISH_ADAM_PATH
 export SAMPLE_TIMESTAMP
 
-# Create output directory for benchmark results
-mkdir -p output/benchmark_results
+# Create output directory for benchmark results (unless in no-save mode)
+if [[ -z "$NO_SAVE_FLAG" ]]; then
+    mkdir -p output/benchmark_results
+fi
 
 # Benchmark command with time measurement
 echo "Running benchmark with $SLURM_CPUS_PER_TASK cores..."
-srun -N 1 -n 1 -c $SLURM_CPUS_PER_TASK \
-/usr/bin/time -v \
-$APPTAINER exec docker://quay.io/biocontainers/adam:1.0.1--hdfd78af_0 \
-python jaccard.py \
-> output/benchmark_results/jaccard_benchmark_${SLURM_CPUS_PER_TASK}cores_${SAMPLE_TIMESTAMP}.out 2>&1
 
-echo "Benchmark completed!"
-echo "End time: $(date)"
-echo "Results saved to: output/benchmark_results/jaccard_benchmark_${SLURM_CPUS_PER_TASK}cores_${SAMPLE_TIMESTAMP}.out"
+if [[ -z "$NO_SAVE_FLAG" ]]; then
+    # Normal mode: save benchmark results to file
+    srun -N 1 -n 1 -c $SLURM_CPUS_PER_TASK \
+    /usr/bin/time -v \
+    $APPTAINER exec docker://quay.io/biocontainers/adam:1.0.1--hdfd78af_0 \
+    python jaccard.py \
+    > output/benchmark_results/jaccard_benchmark_${SLURM_CPUS_PER_TASK}cores_${SAMPLE_TIMESTAMP}.out 2>&1
+    
+    echo "Benchmark completed!"
+    echo "End time: $(date)"
+    echo "Results saved to: output/benchmark_results/jaccard_benchmark_${SLURM_CPUS_PER_TASK}cores_${SAMPLE_TIMESTAMP}.out"
+else
+    # No-save mode: run with timing but don't save benchmark output to file
+    srun -N 1 -n 1 -c $SLURM_CPUS_PER_TASK \
+    /usr/bin/time -v \
+    $APPTAINER exec docker://quay.io/biocontainers/adam:1.0.1--hdfd78af_0 \
+    python jaccard.py $NO_SAVE_FLAG
+    
+    echo "Benchmark completed (no-save mode)!"
+    echo "End time: $(date)"
+    echo "No benchmark files saved - results displayed above only"
+fi

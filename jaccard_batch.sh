@@ -11,11 +11,20 @@
 # Set up environment
 APPTAINER=$HOME/zadanie/1_environment/apptainer_local/bin/apptainer
 
+# Check for no-save parameter
+NO_SAVE_FLAG=""
+if [[ "$1" == "--no-save" || "$1" == "--dry-run" ]]; then
+    NO_SAVE_FLAG="--no-save"
+    echo "Running in NO-SAVE mode - results will only be displayed, not saved"
+fi
+
 echo "Starting Jaccard similarity analysis job..."
 echo "Start time: $(date)"
 
-# Create output directory
-mkdir -p output/protein_comparison
+# Create output directory (unless in no-save mode)
+if [[ -z "$NO_SAVE_FLAG" ]]; then
+    mkdir -p output/protein_comparison
+fi
 
 # Find the latest sample directory based on timestamp
 SAMPLE_DIRS=($(find output/samples_parquet -name "sample_*" -type d | sort))
@@ -66,16 +75,18 @@ export MOUSE_ADAM_PATH
 export FISH_ADAM_PATH
 export SAMPLE_TIMESTAMP
 
-$APPTAINER exec docker://quay.io/biocontainers/adam:1.0.1--hdfd78af_0 python jaccard.py
+$APPTAINER exec docker://quay.io/biocontainers/adam:1.0.1--hdfd78af_0 python jaccard.py $NO_SAVE_FLAG
 
-# Check if output files were created
-if [ -d "mouse_zebrafish_100x100_jaccard.parquet" ]; then
-    echo "Jaccard results saved successfully!"
-    echo "Moving results to output directory..."
-    mv mouse_zebrafish_100x100_jaccard.parquet output/jaccard_results/
-    mv top10_mouse_fish_jaccard.csv output/jaccard_results/ 2>/dev/null || echo "CSV file not found"
-else
-    echo "Warning: Expected output files not found!"
+# Check if output files were created (only in normal mode)
+if [[ -z "$NO_SAVE_FLAG" ]]; then
+    if [ -d "mouse_zebrafish_100x100_jaccard.parquet" ]; then
+        echo "Jaccard results saved successfully!"
+        echo "Moving results to output directory..."
+        mv mouse_zebrafish_100x100_jaccard.parquet output/jaccard_results/
+        mv top10_mouse_fish_jaccard.csv output/jaccard_results/ 2>/dev/null || echo "CSV file not found"
+    else
+        echo "Warning: Expected output files not found!"
+    fi
 fi
 
 echo "Jaccard analysis job completed!"

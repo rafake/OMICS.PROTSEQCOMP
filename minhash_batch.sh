@@ -11,11 +11,20 @@
 # Set up environment
 APPTAINER=$HOME/zadanie/1_environment/apptainer_local/bin/apptainer
 
+# Check for no-save parameter
+NO_SAVE_FLAG=""
+if [[ "$1" == "--no-save" || "$1" == "--dry-run" ]]; then
+    NO_SAVE_FLAG="--no-save"
+    echo "Running in NO-SAVE mode - results will only be displayed, not saved"
+fi
+
 echo "Starting MinHash similarity analysis job..."
 echo "Start time: $(date)"
 
-# Create output directory
-mkdir -p output/protein_comparison
+# Create output directory (unless in no-save mode)
+if [[ -z "$NO_SAVE_FLAG" ]]; then
+    mkdir -p output/protein_comparison
+fi
 
 # Find the latest sample directory based on timestamp
 SAMPLE_DIRS=($(find output/samples_parquet -name "sample_*" -type d | sort))
@@ -66,8 +75,12 @@ export MOUSE_PARQUET_PATH
 export FISH_PARQUET_PATH
 export SAMPLE_TIMESTAMP
 
-$APPTAINER exec docker://quay.io/biocontainers/adam:1.0.1--hdfd78af_0 python minhash.py
+$APPTAINER exec docker://quay.io/biocontainers/adam:1.0.1--hdfd78af_0 python minhash.py $NO_SAVE_FLAG
 
 echo "MinHash analysis job completed!"
 echo "End time: $(date)"
-echo "Check output in: output/protein_comparison/"
+if [[ -z "$NO_SAVE_FLAG" ]]; then
+    echo "Check output in: output/protein_comparison/"
+else
+    echo "No files saved - results displayed above only"
+fi
