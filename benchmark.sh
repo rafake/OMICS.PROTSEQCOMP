@@ -1,26 +1,18 @@
 #!/bin/bash -l
-#SBATCH -J OMICS-benchmark          # job name
+#SBATCH -J OMICS-multi-benchmark    # job name
 #SBATCH -N 1                        # number of nodes (1 node is sufficient)
 #SBATCH -n 1                        # number of tasks (1 task)
-#SBATCH --time=00:30:00             # time limit (in HH:MM:SS format)
+#SBATCH --time=02:00:00             # longer time limit for multiple runs
 #SBATCH -A g100-2238                # your computational grant
 #SBATCH -p topola                   # partition, i.e., "queue"
-#SBATCH --array=0-4                 # array job for 5 different core counts
 
 # Set up environment
 APPTAINER=$HOME/zadanie/1_environment/apptainer_local/bin/apptainer
 
-# Define core counts array
-CORE_COUNTS=(1 2 4 8 16)
-CORES=${CORE_COUNTS[$SLURM_ARRAY_TASK_ID]}
-
-# Set the number of CPUs for this specific array task
-export SLURM_CPUS_PER_TASK=$CORES
-
 # Check for required comparison method parameter
 if [[ -z "$1" ]]; then
     echo "Error: Missing required parameter!"
-    echo "Usage: sbatch benchmark.sh <comparison_method>"
+    echo "Usage: sbatch benchmark_multi_srun.sh <comparison_method>"
     echo "Available methods:"
     echo "  jaccard  - Benchmark Jaccard similarity analysis"
     echo "  minhash  - Benchmark MinHash similarity analysis"
@@ -36,11 +28,14 @@ if [[ "$COMPARISON_METHOD" != "jaccard" && "$COMPARISON_METHOD" != "minhash" ]];
     exit 1
 fi
 
-echo "Starting OMICS benchmark job (Array Task $SLURM_ARRAY_TASK_ID)..."
+# Define core counts to test
+CORE_COUNTS=(1 2 4 8 16)
+
+echo "Starting OMICS multi-core benchmark job..."
 echo "Benchmarking: $COMPARISON_METHOD analysis"
+echo "Testing core counts: ${CORE_COUNTS[*]}"
 echo "Note: $COMPARISON_METHOD script runs in no-save mode for pure performance measurement"
 echo "Start time: $(date)"
-echo "Using $SLURM_CPUS_PER_TASK CPU cores (from array position $SLURM_ARRAY_TASK_ID)"
 
 # Find the latest sample directory based on timestamp
 SAMPLE_DIRS=($(find output/samples_parquet -name "sample_*" -type d | sort))
@@ -84,17 +79,38 @@ export SAMPLE_TIMESTAMP
 # Create output directory for benchmark results
 mkdir -p output/benchmark_results/${SAMPLE_TIMESTAMP}
 
-# Benchmark command with time measurement
-echo "Running $COMPARISON_METHOD benchmark with $SLURM_CPUS_PER_TASK cores..."
-echo "$COMPARISON_METHOD script running in no-save mode for pure computation timing..."
+# Loop through different core counts and run benchmarks sequentially
+for CORES in "${CORE_COUNTS[@]}"; do
+    echo ""
+    echo "========================================="
+    echo "Running $COMPARISON_METHOD benchmark with $CORES cores..."
+    echo "Start time for $CORES cores: $(date)"
+    echo "========================================="
+    
+    # Run benchmark using srun with specified core count
+    srun -N 1 -n 1 -c $CORES \
+    /usr/bin/time -v \
+    $APPTAINER exec docker://quay.io/biocontainers/adam:1.0.1--hdfd78af_0 \
+    python ${COMPARISON_METHOD}.py --no-save \
+    > output/benchmark_results/${SAMPLE_TIMESTAMP}/${COMPARISON_METHOD}_benchmark_${CORES}cores.out 2>&1
+    
+    # Check if the benchmark completed successfully
+    if [ $? -eq 0 ]; then
+        echo "✓ $COMPARISON_METHOD benchmark with $CORES cores completed successfully!"
+    else
+        echo "✗ $COMPARISON_METHOD benchmark with $CORES cores failed!"
+    fi
+    
+    echo "Results saved to: output/benchmark_results/${SAMPLE_TIMESTAMP}/${COMPARISON_METHOD}_benchmark_${CORES}cores.out"
+done
 
-# Run benchmark and save results to timestamped directory
-srun -N 1 -n 1 -c $SLURM_CPUS_PER_TASK \
-/usr/bin/time -v \
-$APPTAINER exec docker://quay.io/biocontainers/adam:1.0.1--hdfd78af_0 \
-python ${COMPARISON_METHOD}.py --no-save \
-> output/benchmark_results/${SAMPLE_TIMESTAMP}/${COMPARISON_METHOD}_benchmark_${SLURM_CPUS_PER_TASK}cores.out 2>&1
-
-echo "$COMPARISON_METHOD benchmark completed (Array Task $SLURM_ARRAY_TASK_ID)!"
+echo ""
+echo "========================================="
+echo "All benchmarks completed!"
 echo "End time: $(date)"
-echo "Results saved to: output/benchmark_results/${SAMPLE_TIMESTAMP}/${COMPARISON_METHOD}_benchmark_${SLURM_CPUS_PER_TASK}cores.out"
+echo "========================================="
+echo "Results directory: output/benchmark_results/${SAMPLE_TIMESTAMP}/"
+echo "Files created:"
+for CORES in "${CORE_COUNTS[@]}"; do
+    echo "  - ${COMPARISON_METHOD}_benchmark_${CORES}cores.out"
+done
