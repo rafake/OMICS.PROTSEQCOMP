@@ -2,13 +2,20 @@
 #SBATCH -J OMICS-benchmark          # job name
 #SBATCH -N 1                        # number of nodes (1 node is sufficient)
 #SBATCH -n 1                        # number of tasks (1 task)
-#SBATCH -c 4                        # number of cores (here: 4, you can change this!)
 #SBATCH --time=00:30:00             # time limit (in HH:MM:SS format)
 #SBATCH -A g100-2238                # your computational grant
 #SBATCH -p topola                   # partition, i.e., "queue"
+#SBATCH --array=0-4                 # array job for 5 different core counts
 
 # Set up environment
 APPTAINER=$HOME/zadanie/1_environment/apptainer_local/bin/apptainer
+
+# Define core counts array
+CORE_COUNTS=(1 2 4 8 16)
+CORES=${CORE_COUNTS[$SLURM_ARRAY_TASK_ID]}
+
+# Set the number of CPUs for this specific array task
+export SLURM_CPUS_PER_TASK=$CORES
 
 # Check for required comparison method parameter
 if [[ -z "$1" ]]; then
@@ -29,11 +36,11 @@ if [[ "$COMPARISON_METHOD" != "jaccard" && "$COMPARISON_METHOD" != "minhash" ]];
     exit 1
 fi
 
-echo "Starting OMICS benchmark job..."
+echo "Starting OMICS benchmark job (Array Task $SLURM_ARRAY_TASK_ID)..."
 echo "Benchmarking: $COMPARISON_METHOD analysis"
 echo "Note: $COMPARISON_METHOD script runs in no-save mode for pure performance measurement"
 echo "Start time: $(date)"
-echo "Using $SLURM_CPUS_PER_TASK CPU cores"
+echo "Using $SLURM_CPUS_PER_TASK CPU cores (from array position $SLURM_ARRAY_TASK_ID)"
 
 # Find the latest sample directory based on timestamp
 SAMPLE_DIRS=($(find output/samples_parquet -name "sample_*" -type d | sort))
@@ -57,6 +64,7 @@ ADAM_FILES=($(find "$LATEST_SAMPLE_DIR" -name "*.adam" -type d))
 
 if [ ${#ADAM_FILES[@]} -lt 2 ]; then
     echo "Error: Need at least 2 .adam directories for comparison!"
+    echo "Found ${#ADAM_FILES[@]} .adam directories in $LATEST_SAMPLE_DIR"
     exit 1
 fi
 
@@ -87,6 +95,6 @@ $APPTAINER exec docker://quay.io/biocontainers/adam:1.0.1--hdfd78af_0 \
 python ${COMPARISON_METHOD}.py --no-save \
 > output/benchmark_results/${SAMPLE_TIMESTAMP}/${COMPARISON_METHOD}_benchmark_${SLURM_CPUS_PER_TASK}cores.out 2>&1
 
-echo "$COMPARISON_METHOD benchmark completed!"
+echo "$COMPARISON_METHOD benchmark completed (Array Task $SLURM_ARRAY_TASK_ID)!"
 echo "End time: $(date)"
 echo "Results saved to: output/benchmark_results/${SAMPLE_TIMESTAMP}/${COMPARISON_METHOD}_benchmark_${SLURM_CPUS_PER_TASK}cores.out"
