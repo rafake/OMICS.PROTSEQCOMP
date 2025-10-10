@@ -97,9 +97,16 @@ top10 = results.orderBy(col("jaccard").desc()).limit(10)
 # ----------------------------------------------------------
 # 9️⃣ Save outputs to timestamped directory
 # ----------------------------------------------------------
-# Create timestamped output directory
-current_date = datetime.now().strftime("%Y%m%d_%H%M%S")
-jaccard_output_dir = f"output/jaccard_results/jaccard_{current_date}"
+# Use sample timestamp from environment variable, or fall back to current time
+sample_timestamp = os.environ.get('SAMPLE_TIMESTAMP')
+if sample_timestamp:
+    timestamp = sample_timestamp
+    print(f"Using sample timestamp from environment: {timestamp}")
+else:
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    print(f"No sample timestamp found, using current time: {timestamp}")
+
+jaccard_output_dir = f"output/jaccard_results/jaccard_{timestamp}"
 os.makedirs(jaccard_output_dir, exist_ok=True)
 
 print(f"Saving results to: {jaccard_output_dir}")

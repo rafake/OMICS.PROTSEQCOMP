@@ -30,6 +30,10 @@ fi
 LATEST_SAMPLE_DIR="${SAMPLE_DIRS[-1]}"
 echo "Using latest sample directory: $LATEST_SAMPLE_DIR"
 
+# Extract timestamp from sample directory name (format: sample_YYYYMMDD_HHMMSS)
+SAMPLE_TIMESTAMP=$(basename "$LATEST_SAMPLE_DIR" | sed 's/sample_//')
+echo "Extracted sample timestamp: $SAMPLE_TIMESTAMP"
+
 # Find .adam directories in the latest sample directory
 ADAM_FILES=($(find "$LATEST_SAMPLE_DIR" -name "*.adam" -type d))
 
@@ -57,9 +61,10 @@ echo "  File 2 (fish): $FISH_ADAM_PATH"
 # Run Jaccard analysis with ADAM container
 echo "Running Jaccard similarity analysis..."
 
-# Export file paths for the Python script to use
+# Export file paths and sample timestamp for the Python script to use
 export MOUSE_ADAM_PATH
 export FISH_ADAM_PATH
+export SAMPLE_TIMESTAMP
 
 $APPTAINER exec docker://quay.io/biocontainers/adam:1.0.1--hdfd78af_0 python jaccard.py
 
