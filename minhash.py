@@ -16,9 +16,6 @@ if no_save_mode:
     print("Running in NO-SAVE mode - results will only be displayed, not saved")
 
 print("Current working directory:", os.getcwd())
-print("Files in current directory:")
-for item in os.listdir():
-    print(f"  - {item}")
 
 # ------------------------------------------------------------
 # 1️⃣ Start Spark session
