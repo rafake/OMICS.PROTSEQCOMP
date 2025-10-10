@@ -2,6 +2,8 @@ from pyspark.sql import SparkSession
 from pyspark.sql.functions import udf, col, lit, size, rand
 from pyspark.sql.types import FloatType, ArrayType, StringType
 import os
+import shutil
+from datetime import datetime
 
 # ----------------------------------------------------------
 # 0️⃣ Check working directory
@@ -93,13 +95,50 @@ results = pairs.withColumn("jaccard", jaccard_udf(col("mouse_kmers"), col("fish_
 top10 = results.orderBy(col("jaccard").desc()).limit(10)
 
 # ----------------------------------------------------------
-# 9️⃣ Save outputs
+# 9️⃣ Save outputs to timestamped directory
 # ----------------------------------------------------------
-results.write.mode("overwrite").parquet("mouse_zebrafish_100x100_jaccard.parquet")
+# Create timestamped output directory
+current_date = datetime.now().strftime("%Y%m%d_%H%M%S")
+jaccard_output_dir = f"output/jaccard_results/jaccard_{current_date}"
+os.makedirs(jaccard_output_dir, exist_ok=True)
+
+print(f"Saving results to: {jaccard_output_dir}")
+
+# Save all results to Parquet
+results.write.mode("overwrite").parquet(f"{jaccard_output_dir}/mouse_zebrafish_100x100_jaccard.parquet")
 
 # For CSV output, exclude array columns (CSV doesn't support complex types)
 top10_for_csv = top10.select("mouse_id", "mouse_seq", "fish_id", "fish_seq", "jaccard")
-top10_for_csv.write.mode("overwrite").csv("top10_mouse_fish_jaccard.csv", header=True)
+top10_for_csv.write.mode("overwrite").csv(f"{jaccard_output_dir}/top10_mouse_fish_jaccard.csv", header=True)
+
+# Copy input parquet files to the results directory
+print("Copying input parquet files to results directory...")
+
+# Copy mouse parquet files
+mouse_source = mouse_path
+mouse_dest = f"{jaccard_output_dir}/input_mouse_parquet"
+if os.path.exists(mouse_source):
+    shutil.copytree(mouse_source, mouse_dest, dirs_exist_ok=True)
+    print(f"Mouse parquet files copied to: {mouse_dest}")
+else:
+    print(f"Warning: Mouse source directory not found: {mouse_source}")
+
+# Copy fish parquet files
+fish_source = fish_path
+fish_dest = f"{jaccard_output_dir}/input_fish_parquet"
+if os.path.exists(fish_source):
+    shutil.copytree(fish_source, fish_dest, dirs_exist_ok=True)
+    print(f"Fish parquet files copied to: {fish_dest}")
+else:
+    print(f"Warning: Fish source directory not found: {fish_source}")
+
+print("Jaccard similarity analysis completed successfully!")
+print(f"Results and input files saved to: {jaccard_output_dir}")
+print(f"Directory structure:")
+print(f"  - {jaccard_output_dir}/mouse_zebrafish_100x100_jaccard.parquet (all results)")
+print(f"  - {jaccard_output_dir}/top10_mouse_fish_jaccard.csv (top 10 matches)")
+print(f"  - {jaccard_output_dir}/input_mouse_parquet/ (original mouse data)")
+print(f"  - {jaccard_output_dir}/input_fish_parquet/ (original fish data)")
 
 # ----------------------------------------------------------
 # 🔟 Show results
