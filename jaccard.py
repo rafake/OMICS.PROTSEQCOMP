@@ -143,4 +143,5 @@ print(f"  - {jaccard_output_dir}/input_fish_parquet/ (original fish data)")
 # ----------------------------------------------------------
 # 🔟 Show results
 # ----------------------------------------------------------
-top10.show(truncate=False)
+print("\nTop 10 most similar protein pairs:")
+top10.select("mouse_id", "fish_id", "jaccard").show(truncate=False)
