@@ -212,27 +212,68 @@ The Jaccard similarity analysis performs the following operations:
 ```python
 # Run the Jaccard analysis script directly
 python jaccard.py
+
+# Run without saving files (console output only)
+python jaccard.py --no-save
 ```
 
 **Batch Job Execution:**
 
 For automated processing on HPC systems, use the SLURM batch script:
 
-� **`jaccard_batch.sh`** - Automated Jaccard similarity analysis
+📄 **`jaccard_batch.sh`** - Automated Jaccard similarity analysis
 
 ```bash
-# Submit the batch job
+# Submit the batch job (with file saving)
 sbatch jaccard_batch.sh
+
+# Submit in no-save mode (console output only)
+sbatch jaccard_batch.sh --no-save
+```
+
+**MinHash Analysis:**
+
+```bash
+# Submit MinHash batch job
+sbatch minhash_batch.sh
+
+# Submit MinHash in no-save mode
+sbatch minhash_batch.sh --no-save
 ```
 
 #### Batch Job Features
 
-The `jaccard_batch.sh` script provides:
+The batch scripts (`jaccard_batch.sh`, `minhash_batch.sh`) provide:
 
 - 🎯 **Environment Integration**: Automatically detects and uses the latest sample data from `output/samples_parquet/`
 - 🕐 **Timestamped Results**: Uses sample timestamp for consistent directory naming
 - 💾 **Complete Data Package**: Saves both analysis results and original input data for reproducibility
 - ⚡ **HPC Optimization**: Configured for SLURM job scheduler with appropriate resource allocation
+- 🔍 **No-Save Mode**: Optional `--no-save` parameter for console-only output without file creation
+
+#### No-Save Mode
+
+Both analysis scripts support a special no-save mode for testing and development:
+
+**Features:**
+- 📺 **Console Output Only**: Results displayed in job output, no files created
+- 🚀 **Faster Execution**: Skips all file I/O operations for pure computation timing
+- 💾 **No Disk Usage**: Zero storage consumption during analysis
+- 🧪 **Perfect for Testing**: Ideal for script validation and debugging
+
+**Usage:**
+```bash
+# Interactive mode
+python jaccard.py --no-save
+python minhash.py --no-save
+
+# Batch mode
+sbatch jaccard_batch.sh --no-save
+sbatch minhash_batch.sh --no-save
+
+# Alternative parameter
+sbatch jaccard_batch.sh --dry-run
+```
 
 #### Output Structure
 
@@ -295,18 +336,27 @@ To run performance benchmarks:
 # Modify CPU core count in benchmark.sh (default: 4 cores)
 #SBATCH -c 4    # Change this value (2, 4, 8, 16, etc.)
 
-# Submit benchmark job
+# Submit benchmark job (with result files)
 sbatch benchmark.sh
+
+# Submit benchmark in no-save mode (console output only)
+sbatch benchmark.sh --no-save
 ```
 
 #### Output
 
+**Normal Mode:**
 Benchmark results are saved as:
 ```
 output/benchmark_results/jaccard_benchmark_4cores_YYYYMMDD_HHMMSS.out
 ```
 
-Each benchmark file contains detailed performance metrics including execution time, memory usage, and CPU utilization statistics.
+**No-Save Mode:**
+- Timing results displayed directly in SLURM job output
+- No benchmark files created
+- Pure performance measurement without I/O overhead
+
+Each benchmark includes detailed performance metrics: execution time, memory usage, and CPU utilization statistics.
 
 ### Task 7: [Coming Next] 🚧a
 
