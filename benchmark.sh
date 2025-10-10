@@ -2,6 +2,7 @@
 #SBATCH -J OMICS-multi-benchmark    # job name
 #SBATCH -N 1                        # number of nodes (1 node is sufficient)
 #SBATCH -n 1                        # number of tasks (1 task)
+#SBATCH -c 16                       # request 16 CPUs per task (maximum we'll use)
 #SBATCH --time=00:05:00             # longer time limit for multiple runs
 #SBATCH -A g100-2238                # your computational grant
 #SBATCH -p topola                   # partition, i.e., "queue"
@@ -31,8 +32,12 @@ fi
 # Define core counts to test
 CORE_COUNTS=(1 2 4 8 16)
 
+# Get the number of CPUs allocated to this job
+ALLOCATED_CPUS=${SLURM_CPUS_PER_TASK:-1}
+
 echo "Starting OMICS multi-core benchmark job..."
 echo "Benchmarking: $COMPARISON_METHOD analysis"
+echo "Allocated CPUs: $ALLOCATED_CPUS"
 echo "Testing core counts: ${CORE_COUNTS[*]}"
 echo "Note: $COMPARISON_METHOD script runs in no-save mode for pure performance measurement"
 echo "Start time: $(date)"
