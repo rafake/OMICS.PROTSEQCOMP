@@ -26,8 +26,8 @@ spark = SparkSession.builder.appName("MouseFishMinHash").getOrCreate()
 # 2️⃣ Load ADAM data from sample directories
 # ------------------------------------------------------------
 # Get file paths from environment variables or use defaults
-mouse_path = os.environ.get('MOUSE_PARQUET_PATH', 'mouse.adam')
-fish_path = os.environ.get('FISH_PARQUET_PATH', 'danio.adam')
+mouse_path = os.environ.get('MOUSE_ADAM_PATH', 'mouse.adam')
+fish_path = os.environ.get('FISH_ADAM_PATH', 'danio.adam')
 
 print(f"Loading mouse data from: {mouse_path}")
 print(f"Loading fish data from: {fish_path}")

@@ -69,14 +69,8 @@ echo "  File 1 (mouse): $MOUSE_ADAM_PATH"
 echo "  File 2 (fish): $FISH_ADAM_PATH"
 
 # Export file paths and sample timestamp for the Python script to use
-if [[ "$COMPARISON_METHOD" == "jaccard" ]]; then
-    export MOUSE_ADAM_PATH
-    export FISH_ADAM_PATH
-else
-    # For minhash, use PARQUET_PATH variables
-    export MOUSE_PARQUET_PATH="$MOUSE_ADAM_PATH"
-    export FISH_PARQUET_PATH="$FISH_ADAM_PATH"
-fi
+export MOUSE_ADAM_PATH
+export FISH_ADAM_PATH
 export SAMPLE_TIMESTAMP
 
 # Create output directory for benchmark results

@@ -60,19 +60,19 @@ for file in "${ADAM_FILES[@]}"; do
 done
 
 # Use first two adam directories for comparison
-MOUSE_PARQUET_PATH="${ADAM_FILES[0]}"
-FISH_PARQUET_PATH="${ADAM_FILES[1]}"
+MOUSE_ADAM_PATH="${ADAM_FILES[0]}"
+FISH_ADAM_PATH="${ADAM_FILES[1]}"
 
 echo "Using files for MinHash analysis:"
-echo "  File 1 (mouse): $MOUSE_PARQUET_PATH"
-echo "  File 2 (fish): $FISH_PARQUET_PATH"
+echo "  File 1 (mouse): $MOUSE_ADAM_PATH"
+echo "  File 2 (fish): $FISH_ADAM_PATH"
 
 # Run MinHash analysis with ADAM container
 echo "Running MinHash similarity analysis..."
 
 # Export file paths and sample timestamp for the Python script to use
-export MOUSE_PARQUET_PATH
-export FISH_PARQUET_PATH
+export MOUSE_ADAM_PATH
+export FISH_ADAM_PATH
 export SAMPLE_TIMESTAMP
 
 $APPTAINER exec docker://quay.io/biocontainers/adam:1.0.1--hdfd78af_0 python minhash.py $NO_SAVE_FLAG
