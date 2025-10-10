@@ -15,7 +15,7 @@ echo "Starting Jaccard similarity analysis job..."
 echo "Start time: $(date)"
 
 # Create output directory
-mkdir -p output/jaccard_results
+mkdir -p output/protein_comparison
 
 # Find the latest sample directory based on timestamp
 SAMPLE_DIRS=($(find output/samples_parquet -name "sample_*" -type d | sort))
@@ -80,4 +80,4 @@ fi
 
 echo "Jaccard analysis job completed!"
 echo "End time: $(date)"
-echo "Check output in: output/jaccard_results/"
+echo "Check output in: output/protein_comparison/"

@@ -106,10 +106,11 @@ else:
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     print(f"No sample timestamp found, using current time: {timestamp}")
 
-jaccard_output_dir = f"output/jaccard_results/jaccard_{timestamp}"
+comparison_output_dir = f"output/protein_comparison/{timestamp}"
+jaccard_output_dir = f"{comparison_output_dir}/jaccard"
 os.makedirs(jaccard_output_dir, exist_ok=True)
 
-print(f"Saving results to: {jaccard_output_dir}")
+print(f"Saving Jaccard results to: {jaccard_output_dir}")
 
 # Save all results to Parquet
 results.write.mode("overwrite").parquet(f"{jaccard_output_dir}/mouse_zebrafish_100x100_jaccard.parquet")
@@ -118,34 +119,39 @@ results.write.mode("overwrite").parquet(f"{jaccard_output_dir}/mouse_zebrafish_1
 top10_for_csv = top10.select("mouse_id", "mouse_seq", "fish_id", "fish_seq", "jaccard")
 top10_for_csv.write.mode("overwrite").csv(f"{jaccard_output_dir}/top10_mouse_fish_jaccard.csv", header=True)
 
-# Copy input parquet files to the results directory
-print("Copying input parquet files to results directory...")
+# Copy input files to shared comparison directory
+print("Copying input sample files to shared comparison directory...")
 
-# Copy mouse parquet files
+# Create shared input data directory
+input_data_dir = f"{comparison_output_dir}/input_data"
+os.makedirs(input_data_dir, exist_ok=True)
+
+# Copy mouse sample files
 mouse_source = mouse_path
-mouse_dest = f"{jaccard_output_dir}/input_mouse_parquet"
+mouse_dest = f"{input_data_dir}/mouse_sample"
 if os.path.exists(mouse_source):
     shutil.copytree(mouse_source, mouse_dest, dirs_exist_ok=True)
-    print(f"Mouse parquet files copied to: {mouse_dest}")
+    print(f"Mouse sample data copied to: {mouse_dest}")
 else:
     print(f"Warning: Mouse source directory not found: {mouse_source}")
 
-# Copy fish parquet files
+# Copy fish sample files
 fish_source = fish_path
-fish_dest = f"{jaccard_output_dir}/input_fish_parquet"
+fish_dest = f"{input_data_dir}/fish_sample"
 if os.path.exists(fish_source):
     shutil.copytree(fish_source, fish_dest, dirs_exist_ok=True)
-    print(f"Fish parquet files copied to: {fish_dest}")
+    print(f"Fish sample data copied to: {fish_dest}")
 else:
     print(f"Warning: Fish source directory not found: {fish_source}")
 
 print("Jaccard similarity analysis completed successfully!")
-print(f"Results and input files saved to: {jaccard_output_dir}")
-print(f"Directory structure:")
+print(f"Results saved to protein comparison directory: {comparison_output_dir}")
+print(f"Jaccard results structure:")
 print(f"  - {jaccard_output_dir}/mouse_zebrafish_100x100_jaccard.parquet (all results)")
 print(f"  - {jaccard_output_dir}/top10_mouse_fish_jaccard.csv (top 10 matches)")
-print(f"  - {jaccard_output_dir}/input_mouse_parquet/ (original mouse data)")
-print(f"  - {jaccard_output_dir}/input_fish_parquet/ (original fish data)")
+print(f"Shared input data:")
+print(f"  - {input_data_dir}/mouse_sample/ (original mouse data)")
+print(f"  - {input_data_dir}/fish_sample/ (original fish data)")
 
 # ----------------------------------------------------------
 # 🔟 Show results

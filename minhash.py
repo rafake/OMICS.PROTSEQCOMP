@@ -109,10 +109,11 @@ else:
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     print(f"No sample timestamp found, using current time: {timestamp}")
 
-minhash_output_dir = f"output/minhash_results/minhash_{timestamp}"
+comparison_output_dir = f"output/protein_comparison/{timestamp}"
+minhash_output_dir = f"{comparison_output_dir}/minhash"
 os.makedirs(minhash_output_dir, exist_ok=True)
 
-print(f"Saving results to: {minhash_output_dir}")
+print(f"Saving MinHash results to: {minhash_output_dir}")
 
 # Save all results to Parquet
 results.write.mode("overwrite").parquet(f"{minhash_output_dir}/mouse_fish_minhash_results.parquet")
@@ -120,34 +121,45 @@ results.write.mode("overwrite").parquet(f"{minhash_output_dir}/mouse_fish_minhas
 # Save top 10 results to CSV
 top10.write.mode("overwrite").csv(f"{minhash_output_dir}/top10_mouse_fish_minhash.csv", header=True)
 
-# Copy input parquet files to the results directory
-print("Copying input parquet files to results directory...")
+# Copy input files to shared comparison directory (only if not already copied)
+print("Checking for shared input data directory...")
 
-# Copy mouse parquet files
+# Create shared input data directory
+input_data_dir = f"{comparison_output_dir}/input_data"
+os.makedirs(input_data_dir, exist_ok=True)
+
+# Copy mouse sample files (only if not already present)
 mouse_source = mouse_path
-mouse_dest = f"{minhash_output_dir}/input_mouse_parquet"
-if os.path.exists(mouse_source):
-    shutil.copytree(mouse_source, mouse_dest, dirs_exist_ok=True)
-    print(f"Mouse parquet files copied to: {mouse_dest}")
+mouse_dest = f"{input_data_dir}/mouse_sample"
+if not os.path.exists(mouse_dest):
+    if os.path.exists(mouse_source):
+        shutil.copytree(mouse_source, mouse_dest, dirs_exist_ok=True)
+        print(f"Mouse sample data copied to: {mouse_dest}")
+    else:
+        print(f"Warning: Mouse source directory not found: {mouse_source}")
 else:
-    print(f"Warning: Mouse source directory not found: {mouse_source}")
+    print(f"Mouse sample data already exists at: {mouse_dest}")
 
-# Copy fish parquet files
+# Copy fish sample files (only if not already present)
 fish_source = fish_path
-fish_dest = f"{minhash_output_dir}/input_fish_parquet"
-if os.path.exists(fish_source):
-    shutil.copytree(fish_source, fish_dest, dirs_exist_ok=True)
-    print(f"Fish parquet files copied to: {fish_dest}")
+fish_dest = f"{input_data_dir}/fish_sample"
+if not os.path.exists(fish_dest):
+    if os.path.exists(fish_source):
+        shutil.copytree(fish_source, fish_dest, dirs_exist_ok=True)
+        print(f"Fish sample data copied to: {fish_dest}")
+    else:
+        print(f"Warning: Fish source directory not found: {fish_source}")
 else:
-    print(f"Warning: Fish source directory not found: {fish_source}")
+    print(f"Fish sample data already exists at: {fish_dest}")
 
 print("MinHash similarity analysis completed successfully!")
-print(f"Results and input files saved to: {minhash_output_dir}")
-print(f"Directory structure:")
+print(f"Results saved to protein comparison directory: {comparison_output_dir}")
+print(f"MinHash results structure:")
 print(f"  - {minhash_output_dir}/mouse_fish_minhash_results.parquet (all results)")
 print(f"  - {minhash_output_dir}/top10_mouse_fish_minhash.csv (top 10 matches)")
-print(f"  - {minhash_output_dir}/input_mouse_parquet/ (original mouse data)")
-print(f"  - {minhash_output_dir}/input_fish_parquet/ (original fish data)")
+print(f"Shared input data:")
+print(f"  - {input_data_dir}/mouse_sample/ (original mouse data)")
+print(f"  - {input_data_dir}/fish_sample/ (original fish data)")
 
 # ------------------------------------------------------------
 # 🔟 Show results

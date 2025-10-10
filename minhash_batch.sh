@@ -15,7 +15,7 @@ echo "Starting MinHash similarity analysis job..."
 echo "Start time: $(date)"
 
 # Create output directory
-mkdir -p output/minhash_results
+mkdir -p output/protein_comparison
 
 # Find the latest sample directory based on timestamp
 SAMPLE_DIRS=($(find output/samples_parquet -name "sample_*" -type d | sort))
@@ -70,4 +70,4 @@ $APPTAINER exec docker://quay.io/biocontainers/adam:1.0.1--hdfd78af_0 python min
 
 echo "MinHash analysis job completed!"
 echo "End time: $(date)"
-echo "Check output in: output/minhash_results/"
+echo "Check output in: output/protein_comparison/"
