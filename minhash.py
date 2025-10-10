@@ -2,6 +2,17 @@ from pyspark.sql import SparkSession
 from pyspark.sql.functions import udf, col, rand, explode, collect_list
 from pyspark.sql.types import ArrayType, StringType
 from pyspark.ml.feature import HashingTF, MinHashLSH
+import os
+import shutil
+from datetime import datetime
+
+# ----------------------------------------------------------
+# 0️⃣ Check working directory
+# ----------------------------------------------------------
+print("Current working directory:", os.getcwd())
+print("Files in current directory:")
+for item in os.listdir():
+    print(f"  - {item}")
 
 # ------------------------------------------------------------
 # 1️⃣ Start Spark session
@@ -9,16 +20,26 @@ from pyspark.ml.feature import HashingTF, MinHashLSH
 spark = SparkSession.builder.appName("MouseFishMinHash").getOrCreate()
 
 # ------------------------------------------------------------
-# 2️⃣ Load Parquet / ADAM data
+# 2️⃣ Load Parquet data from sample directories
 # ------------------------------------------------------------
-mouse_df = spark.read.parquet("mouse.adam")
-fish_df  = spark.read.parquet("danio.adam")
+# Get file paths from environment variables or use defaults
+mouse_path = os.environ.get('MOUSE_PARQUET_PATH', 'mouse.adam')
+fish_path = os.environ.get('FISH_PARQUET_PATH', 'danio.adam')
+
+print(f"Loading mouse data from: {mouse_path}")
+print(f"Loading fish data from: {fish_path}")
+
+mouse_df = spark.read.parquet(mouse_path)
+fish_df  = spark.read.parquet(fish_path)
 
 # ------------------------------------------------------------
-# 3️⃣ Randomly sample 100 sequences from each
+# 3️⃣ Use all sequences from sample data (already sampled)
 # ------------------------------------------------------------
-mouse_sample = mouse_df.select("name", "sequence").orderBy(rand()).limit(100)
-fish_sample  = fish_df.select("name", "sequence").orderBy(rand()).limit(100)
+print(f"Mouse dataset contains {mouse_df.count()} sequences")
+print(f"Fish dataset contains {fish_df.count()} sequences")
+
+mouse_sample = mouse_df.select("name", "sequence")
+fish_sample  = fish_df.select("name", "sequence")
 
 # ------------------------------------------------------------
 # 4️⃣ Define UDF to extract 3-mers
@@ -75,12 +96,62 @@ results = similarities.select(
 # Get top-10 most similar pairs
 top10 = results.orderBy(col("minhash_similarity").desc()).limit(10)
 
-top10.show(truncate=False)
+# ------------------------------------------------------------
+# 9️⃣ Save outputs to timestamped directory
+# ------------------------------------------------------------
+# Use sample timestamp from environment variable, or fall back to current time
+sample_timestamp = os.environ.get('SAMPLE_TIMESTAMP')
+if sample_timestamp:
+    timestamp = sample_timestamp
+    print(f"Using sample timestamp from environment: {timestamp}")
+else:
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    print(f"No sample timestamp found, using current time: {timestamp}")
+
+minhash_output_dir = f"output/minhash_results/minhash_{timestamp}"
+os.makedirs(minhash_output_dir, exist_ok=True)
+
+print(f"Saving results to: {minhash_output_dir}")
+
+# Save all results to Parquet
+results.write.mode("overwrite").parquet(f"{minhash_output_dir}/mouse_fish_minhash_results.parquet")
+
+# Save top 10 results to CSV
+top10.write.mode("overwrite").csv(f"{minhash_output_dir}/top10_mouse_fish_minhash.csv", header=True)
+
+# Copy input parquet files to the results directory
+print("Copying input parquet files to results directory...")
+
+# Copy mouse parquet files
+mouse_source = mouse_path
+mouse_dest = f"{minhash_output_dir}/input_mouse_parquet"
+if os.path.exists(mouse_source):
+    shutil.copytree(mouse_source, mouse_dest, dirs_exist_ok=True)
+    print(f"Mouse parquet files copied to: {mouse_dest}")
+else:
+    print(f"Warning: Mouse source directory not found: {mouse_source}")
+
+# Copy fish parquet files
+fish_source = fish_path
+fish_dest = f"{minhash_output_dir}/input_fish_parquet"
+if os.path.exists(fish_source):
+    shutil.copytree(fish_source, fish_dest, dirs_exist_ok=True)
+    print(f"Fish parquet files copied to: {fish_dest}")
+else:
+    print(f"Warning: Fish source directory not found: {fish_source}")
+
+print("MinHash similarity analysis completed successfully!")
+print(f"Results and input files saved to: {minhash_output_dir}")
+print(f"Directory structure:")
+print(f"  - {minhash_output_dir}/mouse_fish_minhash_results.parquet (all results)")
+print(f"  - {minhash_output_dir}/top10_mouse_fish_minhash.csv (top 10 matches)")
+print(f"  - {minhash_output_dir}/input_mouse_parquet/ (original mouse data)")
+print(f"  - {minhash_output_dir}/input_fish_parquet/ (original fish data)")
 
 # ------------------------------------------------------------
-# 9️⃣ Save results
+# 🔟 Show results
 # ------------------------------------------------------------
-results.write.mode("overwrite").parquet("mouse_fish_minhash_results.parquet")
-top10.write.mode("overwrite").csv("top10_mouse_fish_minhash.csv", header=True)
+print("\nTop 10 most similar protein pairs:")
+top10.select("mouse_id", "fish_id", "minhash_similarity").show(truncate=False)
 
 spark.stop()
