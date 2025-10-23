@@ -34,6 +34,10 @@ zebrafish_protein_parquet/
 mouse_protein_sample_100/
 zebrafish_protein_sample_100/
 
+# Analysis output directories
+slurm/
+plots/
+
 # Data files
 *.zip
 *.fa
