@@ -7,8 +7,13 @@
 #SBATCH --partition topola
 #SBATCH --time=00:30:00
 #SBATCH -A g100-2238
+#SBATCH --output=slurm/multi-sampling-task-%j.out
+#SBATCH --error=slurm/multi-sampling-task-%j.err
 
 APPTAINER=$HOME/zadanie/1_environment/apptainer_local/bin/apptainer
+
+# Create slurm output directory
+mkdir -p slurm
 
 # Create timestamped output directory for this batch run
 BATCH_TIMESTAMP=$(date +"%Y%m%d_%H%M%S")

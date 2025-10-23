@@ -6,9 +6,14 @@
 #SBATCH --time=00:05:00             # longer time limit for multiple runs
 #SBATCH -A g100-2238                # your computational grant
 #SBATCH -p topola                   # partition, i.e., "queue"
+#SBATCH --output=slurm/OMICS-multi-benchmark-%j.out
+#SBATCH --error=slurm/OMICS-multi-benchmark-%j.err
 
 # Set up environment
 APPTAINER=$HOME/zadanie/1_environment/apptainer_local/bin/apptainer
+
+# Create slurm output directory
+mkdir -p slurm
 
 # Check for required comparison method parameter
 if [[ -z "$1" ]]; then

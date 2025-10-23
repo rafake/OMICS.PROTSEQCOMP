@@ -6,8 +6,13 @@
 #SBATCH --partition topola
 #SBATCH --time=00:05:00
 #SBATCH -A g100-2238
+#SBATCH --output=slurm/test-task-%j.out
+#SBATCH --error=slurm/test-task-%j.err
 
 APPTAINER=$HOME/zadanie/1_environment/apptainer_local/bin/apptainer
+
+# Create slurm output directory
+mkdir -p slurm
 
 echo "Using Apptainer from $APPTAINER"
 

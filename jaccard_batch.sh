@@ -7,9 +7,14 @@
 #SBATCH --partition topola
 #SBATCH --time=0:01:00
 #SBATCH -A g100-2238
+#SBATCH --output=slurm/jaccard-analysis-%j.out
+#SBATCH --error=slurm/jaccard-analysis-%j.err
 
 # Set up environment
 APPTAINER=$HOME/zadanie/1_environment/apptainer_local/bin/apptainer
+
+# Create slurm output directory
+mkdir -p slurm
 
 # Check for no-save parameter
 NO_SAVE_FLAG=""
