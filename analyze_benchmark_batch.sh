@@ -7,11 +7,18 @@
 #SBATCH --partition topola
 #SBATCH --time=0:05:00
 #SBATCH -A g100-2238
+#SBATCH --output=slurm/benchmark-analysis-%j.out
+#SBATCH --error=slurm/benchmark-analysis-%j.err
 
 # Set up environment
 APPTAINER=$HOME/zadanie/1_environment/apptainer_local/bin/apptainer
 
+# Create slurm output directory
+mkdir -p slurm
+
 echo "Starting benchmark results analysis job..."
+echo "SLURM Job ID: $SLURM_JOB_ID"
+echo "SLURM output files: slurm/benchmark-analysis-$SLURM_JOB_ID.out/err"
 echo "Start time: $(date)"
 
 # Check if analysis script exists
