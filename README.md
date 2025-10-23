@@ -1,7 +1,7 @@
 # 🧬 OMICS.PROTSEQCOMP
 
 > **OMICS Protein Sequence Comparison Project**  
-> Developed during the first semester at ICM UW (Interdisciplinary Centre for Mathematical and Computational Modelling, University of Warsaw)
+> Developed duri#### Verify ADAM Installationster at ICM UW (Interdisciplinary Centre for Mathematical and Computational Modelling, University of Warsaw)
 
 ## 📋 Overview
 
@@ -86,34 +86,9 @@ ADAM (A Distributed Alignment Manager) is a genomics analysis platform built on 
 
 #### Launch Apptainer Container
 
-Launch the ADAM container using the local installation:
-
 ```bash
-# Clone the repository
-git clone https://github.com/rafake/OMICS.PROTSEQCOMP.git
-cd OMICS.PROTSEQCOMP
-
-# Create tools directory for local installations
-mkdir -p tools
-
-# Download Apptainer to the tools directory
-cd tools
-curl -s https://api.github.com/repos/apptainer/apptainer/releases/latest \
-| grep browser_download_url \
-| grep linux_amd64.tar.gz \
-| cut -d '"' -f 4 \
-| wget -qi -
-
-# Extract Apptainer
-tar -xzf apptainer_*.tar.gz
-mv apptainer-* apptainer
-rm apptainer_*.tar.gz
-
-# Return to project root
-cd ..
-
-# Verify installation
-./tools/apptainer/bin/apptainer --version
+# Launch ADAM container
+./tools/apptainer/bin/apptainer shell docker://quay.io/biocontainers/adam:1.0.1--hdfd78af_0
 ```
 
 #### 2. Verify Configuration
@@ -256,13 +231,7 @@ For processing multiple datasets automatically, use the batch job system to crea
 
 📄 **`multi_dataset_sampling_batch.sh`** - Automated batch processing script
 
-This SLURM batch job will:
-
-- 🔍 **Scan input directory** for datasets with parquet files or "parquet" in the name
-- 🎲 **Create 100 random samples** from each dataset using PySpark's `orderBy(rand()).limit(100)`
-- 💾 **Save timestamped results** to `output/sample_parquet/sample_YYYYMMDD_HHMMSS/`
-- ⚡ **Process multiple datasets** in a single job submission
-- 🗂️ **Organize output** with timestamp-based directory structure for easy tracking
+This script scans the input directory for parquet datasets, creates 100 random samples from each using PySpark's distributed sampling, and saves timestamped results to `output/sample_parquet/sample_YYYYMMDD_HHMMSS/`.
 
 **Setup and Usage:**
 
@@ -290,13 +259,6 @@ This SLURM batch job will:
            ├── YYYYMMDD_HHMMSS_100_zebrafish_protein_output.adam
            └── other_dataset_output.adam
    ```
-
-**Key Features:**
-
-- **Reproducible sampling**: Uses PySpark's distributed sampling for consistent results
-- **Timestamp organization**: Each batch run creates a unique timestamped directory
-- **Efficient processing**: Leverages Spark's distributed computing capabilities
-- **Flexible input**: Automatically detects and processes all parquet datasets
 
 ### Task 5: Jaccard Similarity Analysis 🧮
 
@@ -349,29 +311,11 @@ sbatch minhash_batch.sh
 sbatch minhash_batch.sh --no-save
 ```
 
-#### Batch Job Features
-
-The batch scripts (`jaccard_batch.sh`, `minhash_batch.sh`) provide:
-
-- 🎯 **Environment Integration**: Automatically detects and uses the latest sample data from `output/samples_parquet/`
-- 🕐 **Timestamped Results**: Uses sample timestamp for consistent directory naming
-- 💾 **Complete Data Package**: Saves both analysis results and original input data for reproducibility
-- ⚡ **HPC Optimization**: Configured for SLURM job scheduler with appropriate resource allocation
-- 🔍 **No-Save Mode**: Optional `--no-save` parameter for console-only output without file creation
-- 📁 **Organized Logging**: All SLURM job outputs are automatically saved to the `slurm/` directory for clean project organization
+The batch scripts automatically detect the latest sample data, use timestamped results for consistency, and support a `--no-save` mode for console-only output during testing.
 
 #### No-Save Mode
 
-Both analysis scripts support a special no-save mode for testing and development:
-
-**Features:**
-
-- 📺 **Console Output Only**: Results displayed in job output, no files created
-- 🚀 **Faster Execution**: Skips all file I/O operations for pure computation timing
-- 💾 **No Disk Usage**: Zero storage consumption during analysis
-- 🧪 **Perfect for Testing**: Ideal for script validation and debugging
-
-**Usage:**
+Both scripts support `--no-save` mode for testing - results display in console only without creating files:
 
 ```bash
 # Interactive mode
@@ -405,13 +349,7 @@ output/
             └── fish_sample/                # Original zebrafish sample
 ```
 
-#### Key Analysis Features
-
-- **🔬 K-mer Analysis**: Extracts unique 3-mers from protein sequences for comparison
-- **📊 Jaccard Coefficient**: Measures similarity as intersection over union of k-mer sets
-- **⚡ Distributed Computing**: Leverages PySpark for efficient parallel processing
-- **🎯 Top Matches**: Identifies and displays the 10 most similar protein pairs
-- **📈 Scalable Design**: Handles large-scale protein comparisons efficiently
+The analysis extracts 3-mers from protein sequences, computes Jaccard similarity coefficients using PySpark's distributed processing, and identifies the top 10 most similar protein pairs.
 
 #### Interpretation
 
@@ -432,15 +370,7 @@ This task evaluates the scalability and performance characteristics of the prote
 
 📄 **`benchmark.sh`** - Automated multi-core performance measurement script
 
-The benchmark system provides:
-
-- 🎯 **Automated Execution**: Uses the latest sample data for consistent benchmarking
-- ⏱️ **Detailed Timing**: Comprehensive resource usage measurement with `/usr/bin/time -v`
-- � **SLURM Array Jobs**: Automatically tests 5 different CPU configurations (1, 2, 4, 8, 16 cores)
-- 📊 **Organized Results**: Timestamped output files for performance analysis
-- 🔀 **Multiple Methods**: Supports benchmarking both Jaccard and MinHash algorithms
-- 🚀 **Pure Performance**: Always runs analysis scripts in no-save mode for accurate timing
-- ⚡ **Single Command**: One submission automatically benchmarks all core configurations
+This script uses SLURM array jobs to automatically test 5 CPU configurations (1, 2, 4, 8, 16 cores) with comprehensive resource usage measurement via `/usr/bin/time -v`. Both Jaccard and MinHash algorithms can be benchmarked.
 
 #### Usage
 
@@ -503,14 +433,7 @@ output/
         └── minhash_benchmark_16cores.out   # 16-core MinHash benchmark
 ```
 
-**Key Features:**
-
-- **📁 Organized by Sample**: Each benchmark run uses the same sample data timestamp
-- **🔬 Method-Specific**: Clear separation between Jaccard and MinHash results
-- **⚙️ Core Configuration**: Filename includes CPU core count for easy identification
-- **🚀 Pure Computation**: Analysis scripts run in no-save mode for accurate performance measurement
-- **📊 Comprehensive Metrics**: Each file contains detailed execution time, memory usage, and CPU utilization
-- **🔢 Complete Coverage**: Single command generates comprehensive scalability analysis
+Each benchmark run uses the same sample data timestamp with clear separation between Jaccard and MinHash results. Filenames include CPU core count for easy identification, and analysis scripts run in no-save mode for accurate performance measurement with detailed execution time, memory usage, and CPU utilization metrics.
 
 **Performance Analysis:**
 This automated system enables comprehensive analysis of:
@@ -531,14 +454,7 @@ The project includes an integrated analysis system that automatically processes 
 sbatch analyze_benchmark_batch.sh
 ```
 
-**Analysis Features:**
-
-- 🐍 **Python Environment**: Uses Anaconda module (`apps/anaconda/2024-10`) for scientific computing
-- 📊 **Matplotlib Plotting**: Generates comprehensive performance visualization plots
-- 📈 **Automatic Analysis**: Detects benchmark directories and processes all available results
-- 💾 **Organized Results**: Saves plots directly in benchmark results directories alongside raw data
-- 🔍 **Comprehensive Coverage**: Analyzes both Jaccard and MinHash benchmark results
-- 📁 **SLURM Integration**: Job outputs organized in the `slurm/` directory
+This system uses the Anaconda module (`apps/anaconda/2024-10`) for scientific computing with Matplotlib to generate comprehensive performance visualization plots. It automatically detects benchmark directories, processes all available results, and saves plots directly in benchmark results directories alongside raw data.
 
 **Generated Plots:**
 The analysis system automatically creates performance visualization plots saved in each benchmark results directory, enabling easy comparison of:
