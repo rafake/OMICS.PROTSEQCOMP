@@ -250,6 +250,7 @@ The batch scripts (`jaccard_batch.sh`, `minhash_batch.sh`) provide:
 - 💾 **Complete Data Package**: Saves both analysis results and original input data for reproducibility
 - ⚡ **HPC Optimization**: Configured for SLURM job scheduler with appropriate resource allocation
 - 🔍 **No-Save Mode**: Optional `--no-save` parameter for console-only output without file creation
+- 📁 **Organized Logging**: All SLURM job outputs are automatically saved to the `slurm/` directory for clean project organization
 
 #### No-Save Mode
 
@@ -411,6 +412,34 @@ This automated system enables comprehensive analysis of:
 - Resource utilization patterns across different configurations
 - Optimal core count determination for specific workloads
 
+**Performance Analysis & Visualization:**
+
+📄 **`analyze_benchmark_batch.sh`** - Automated performance analysis and plotting script
+
+The project includes an integrated analysis system that automatically processes benchmark results and generates visualization plots:
+
+```bash
+# Analyze and visualize all benchmark results for the latest sample timestamp
+sbatch analyze_benchmark_batch.sh
+```
+
+**Analysis Features:**
+
+- 🐍 **Python Environment**: Uses Anaconda module (`apps/anaconda/2024-10`) for scientific computing
+- 📊 **Matplotlib Plotting**: Generates comprehensive performance visualization plots
+- 📈 **Automatic Analysis**: Detects benchmark directories and processes all available results
+- 💾 **Organized Results**: Saves plots directly in benchmark results directories alongside raw data
+- 🔍 **Comprehensive Coverage**: Analyzes both Jaccard and MinHash benchmark results
+- 📁 **SLURM Integration**: Job outputs organized in the `slurm/` directory
+
+**Generated Plots:**
+The analysis system automatically creates performance visualization plots saved in each benchmark results directory, enabling easy comparison of:
+
+- CPU core scalability patterns
+- Algorithm performance comparison (Jaccard vs MinHash)
+- Memory usage trends across configurations
+- Execution time scaling analysis
+
 **Job Monitoring:**
 Monitor array job progress with standard SLURM commands:
 
@@ -423,20 +452,43 @@ squeue -j <job_id>_<array_index>
 
 # Check all array tasks
 scontrol show job <job_id>
+
+# Check SLURM job logs
+ls slurm/
 ```
 
-## 📚 Dependencies
+## � Project Structure
+
+```
+OMICS.PROTSEQCOMP/
+├── input/                          # Input datasets (organized by species)
+├── output/                         # Analysis results and samples
+│   ├── samples_parquet/           # Sampled datasets with timestamps
+│   ├── protein_comparison/        # Jaccard and MinHash analysis results
+│   └── benchmark_results/         # Performance analysis with plots
+├── slurm/                         # SLURM job output logs (.out/.err files)
+├── plots/                         # Generated visualization plots
+├── *.sh                          # SLURM batch job scripts
+├── *.py                          # Python analysis scripts
+└── README.md                     # Project documentation
+```
+
+## �📚 Dependencies
 
 - **Apptainer**: Container platform for HPC environments
 - **ADAM**: Genomics analysis framework (v1.0.1)
 - **Apache Spark**: Distributed computing framework
 - **Python**: 3.12+ with PySpark
+- **Anaconda**: Scientific Python environment (`apps/anaconda/2024-10`) for analysis and plotting
+- **SLURM**: HPC job scheduler with organized output management
 
 ## 🎯 Project Goals
 
-- Protein sequence comparison and alignment
-- High-performance bioinformatics analysis
-- Distributed computing implementation using Spark
+- **Comparative Genomics**: Cross-species protein sequence comparison between mouse and zebrafish
+- **Scalable Analysis**: High-performance bioinformatics analysis using distributed computing
+- **Algorithm Comparison**: Implementation and benchmarking of Jaccard and MinHash similarity methods
+- **Performance Optimization**: Multi-core scalability analysis and resource utilization measurement
+- **Reproducible Workflows**: Organized batch processing with automated data management and visualization
 
 ## 📖 Documentation
 
