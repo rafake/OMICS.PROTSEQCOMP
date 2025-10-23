@@ -98,9 +98,12 @@ if [[ $ANALYSIS_RESULT -eq 0 ]]; then
     echo "Analysis completed successfully!"
     echo ""
     echo "Output files:"
-    if [[ -f "plots/benchmark_performance_analysis.png" ]]; then
-        echo "  - Performance plots: plots/benchmark_performance_analysis.png"
-        echo "    File size: $(du -h plots/benchmark_performance_analysis.png | cut -f1)"
+    
+    # Check for plots in the benchmark results directory
+    PLOTS_FILE="$BENCHMARK_DIR/plots/benchmark_performance_analysis.png"
+    if [[ -f "$PLOTS_FILE" ]]; then
+        echo "  - Performance plots: $PLOTS_FILE"
+        echo "    File size: $(du -h "$PLOTS_FILE" | cut -f1)"
     else
         echo "  - Performance plots: Check job output above (plots may not have been saved)"
     fi
@@ -108,7 +111,7 @@ if [[ $ANALYSIS_RESULT -eq 0 ]]; then
     echo ""
     echo "To view the results:"
     echo "  - Summary tables are displayed in the job output above"
-    echo "  - Performance plots saved to plots/benchmark_performance_analysis.png"
+    echo "  - Performance plots saved in benchmark results directory"
 else
     echo "Analysis failed with exit code: $ANALYSIS_RESULT"
     echo "Check the error messages above for details"
@@ -128,4 +131,4 @@ fi
 
 echo "Final output locations:"
 echo "  - SLURM logs: slurm/benchmark-analysis-$SLURM_JOB_ID.out/err"
-echo "  - Analysis plots: plots/benchmark_performance_analysis.png"
+echo "  - Analysis plots: $BENCHMARK_DIR/plots/benchmark_performance_analysis.png"

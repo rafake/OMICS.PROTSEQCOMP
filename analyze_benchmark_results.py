@@ -13,6 +13,7 @@ import os
 import re
 import sys
 import glob
+import datetime
 import matplotlib.pyplot as plt
 import pandas as pd
 from pathlib import Path
@@ -294,8 +295,8 @@ def main():
         # Create summary table
         create_summary_table(df)
         
-        # Create performance plots
-        output_dir = os.path.join(os.path.dirname(directory_path) or '.', 'plots')
+        # Create performance plots in the same directory as benchmark files
+        output_dir = os.path.join(directory_path, 'plots')
         create_performance_plots(df, output_dir)
     
     print("\nAnalysis complete!")
