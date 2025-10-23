@@ -118,3 +118,4 @@ echo "Files created:"
 for CORES in "${CORE_COUNTS[@]}"; do
     echo "  - ${COMPARISON_METHOD}_benchmark_${CORES}cores.out"
 done
+
