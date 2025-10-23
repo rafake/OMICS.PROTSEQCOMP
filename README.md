@@ -1,7 +1,7 @@
 # 🧬 OMICS.PROTSEQCOMP
 
 > **OMICS Protein Sequence Comparison Project**  
-> Developed duri#### Verify ADAM Installationster at ICM UW (Interdisciplinary Centre for Mathematical and Computational Modelling, University of Warsaw)
+> Developed during master studies at ICM UW (Interdisciplinary Centre for Mathematical and Computational Modelling, University of Warsaw)
 
 ## 📋 Overview
 
@@ -95,17 +95,14 @@ ADAM (A Distributed Alignment Manager) is a genomics analysis platform built on 
 
 All batch scripts are pre-configured to use the local installation:
 
-````bash
-# Verify the configuration (optional)
-
-
 ```bash
+# Verify the configuration (optional)
 # Using the local Apptainer installation
 ./tools/apptainer/bin/apptainer shell --overlay overlay docker://quay.io/biocontainers/adam:1.0.1--hdfd78af_0
 
 # Or using the configured environment variable (after running batch scripts)
 $APPTAINER shell --overlay overlay docker://quay.io/biocontainers/adam:1.0.1--hdfd78af_0
-````
+```
 
 #### 4. Verify ADAM Installation
 
@@ -202,7 +199,7 @@ adam-submit transformSequences zebrafish_protein.fa zebrafish_protein_parquet
 
 This format conversion enables efficient distributed processing of protein sequences using ADAM's Spark-based architecture.
 
-### Task 4: PySpark Environment Setup �
+### Task 4: PySpark Environment Setup ⚙️
 
 **Objective**: Initialize PySpark session and verify data availability for analysis
 
@@ -480,37 +477,6 @@ scontrol show job <job_id>
 # Check SLURM job logs
 ls slurm/
 ```
-
-## � Project Structure
-
-```
-OMICS.PROTSEQCOMP/
-├── tools/                         # Local tools and dependencies (ignored by git)
-│   └── apptainer/                # Local Apptainer installation
-│       └── bin/
-│           └── apptainer         # Apptainer executable
-├── input/                          # Input datasets (organized by species)
-├── output/                         # Analysis results and samples
-│   ├── samples_parquet/           # Sampled datasets with timestamps
-│   ├── protein_comparison/        # Jaccard and MinHash analysis results
-│   └── benchmark_results/         # Performance analysis with plots
-├── slurm/                         # SLURM job output logs (.out/.err files)
-├── plots/                         # Generated visualization plots
-├── setup.sh                      # Automated setup script
-├── *.sh                          # SLURM batch job scripts
-├── *.py                          # Python analysis scripts
-├── .gitignore                    # Git ignore rules
-└── README.md                     # Project documentation
-```
-
-## �📚 Dependencies
-
-- **Apptainer**: Container platform for HPC environments
-- **ADAM**: Genomics analysis framework (v1.0.1)
-- **Apache Spark**: Distributed computing framework
-- **Python**: 3.12+ with PySpark
-- **Anaconda**: Scientific Python environment (`apps/anaconda/2024-10`) for analysis and plotting
-- **SLURM**: HPC job scheduler with organized output management
 
 ## 🎯 Project Goals
 
