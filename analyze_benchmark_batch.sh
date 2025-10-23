@@ -7,18 +7,18 @@
 #SBATCH --partition topola
 #SBATCH --time=0:05:00
 #SBATCH -A g100-2238
-#SBATCH --output=slurm/benchmark-analysis-%j.out
-#SBATCH --error=slurm/benchmark-analysis-%j.err
+#SBATCH --output=benchmark-analysis-%j.out
+#SBATCH --error=benchmark-analysis-%j.err
 
 # Set up environment
 APPTAINER=$HOME/zadanie/1_environment/apptainer_local/bin/apptainer
 
-# Create slurm output directory
-mkdir -p slurm
+# Create slurm and plots output directories
+mkdir -p slurm plots
 
 echo "Starting benchmark results analysis job..."
 echo "SLURM Job ID: $SLURM_JOB_ID"
-echo "SLURM output files: slurm/benchmark-analysis-$SLURM_JOB_ID.out/err"
+echo "SLURM output files will be moved to: slurm/benchmark-analysis-$SLURM_JOB_ID.out/err"
 echo "Start time: $(date)"
 
 # Check if analysis script exists
@@ -102,3 +102,19 @@ else
     echo "Analysis failed with exit code: $ANALYSIS_RESULT"
     echo "Check the error messages above for details"
 fi
+
+# Move SLURM output files to slurm directory
+echo ""
+echo "Moving SLURM output files to slurm directory..."
+if [[ -f "benchmark-analysis-$SLURM_JOB_ID.out" ]]; then
+    mv "benchmark-analysis-$SLURM_JOB_ID.out" "slurm/"
+    echo "Moved: benchmark-analysis-$SLURM_JOB_ID.out -> slurm/"
+fi
+if [[ -f "benchmark-analysis-$SLURM_JOB_ID.err" ]]; then
+    mv "benchmark-analysis-$SLURM_JOB_ID.err" "slurm/"
+    echo "Moved: benchmark-analysis-$SLURM_JOB_ID.err -> slurm/"
+fi
+
+echo "Final output locations:"
+echo "  - SLURM logs: slurm/benchmark-analysis-$SLURM_JOB_ID.out/err"
+echo "  - Analysis plots: plots/benchmark_performance_analysis.png"
