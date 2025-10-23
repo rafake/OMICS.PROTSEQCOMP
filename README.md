@@ -1,16 +1,6 @@
 # 🧬 OMICS.PROTSEQCOMP
 
-> \*\*OMIC### Pre-configured Batch Scripts
-
-All batch scripts are already configured to use the local Apptainer installation:
-
-```bash
-# All batch scripts are pre-configured with:
-APPTAINER=$PWD/tools/apptainer/bin/apptainer
-```
-
-**No configuration needed!** After running `./setup.sh` to download Apptainer, all scripts are ready to use. Comparison Project\*\*
-
+> **OMICS Protein Sequence Comparison Project**  
 > Developed during the first semester at ICM UW (Interdisciplinary Centre for Mathematical and Computational Modelling, University of Warsaw)
 
 ## 📋 Overview
@@ -37,31 +27,18 @@ cd OMICS.PROTSEQCOMP
 
 ## 🔬 Project Workflow
 
-This project consists of 6 main tasks that demonstrate protein sequence analysis using comp## 📁 Project Structure
+This project consists of 6 main tasks that demonstrate protein sequence analysis using comparative genomics approaches:
 
-````
-O## ⚙️ Configuration
+1. **Environment Setup** - Configure Apptainer and ADAM
+2. **Data Acquisition** - Download protein sequences from NCBI
+3. **File Format Conversion** - Convert FASTA to Parquet format
+4. **PySpark Environment & Sampling** - Create samples for analysis
+5. **Similarity Analysis** - Compare sequences using Jaccard and MinHash
+6. **Performance Benchmarking** - Measure scalability across CPU configurations
 
-### Path Configuration for Batch Scripts
+## ⚙️ Pre-configured Setup
 
-All batch scripts (`*.sh`) in this project need to be configured with your Apptainer installation path.
-
-**Repository-based configuration** (after following setup steps):
-```bash
-# All batch scripts will use the local installation in the repository
-APPTAINER=$PWD/tools/apptainer/bin/apptainer
-````
-
-**Automatic setup** - The setup script handles this automatically:
-
-```bash
-# The setup.sh script automatically configures all batch scripts to use:
-APPTAINER=$PWD/tools/apptainer/bin/apptainer
-
-# No manual configuration needed after running ./setup.sh
-```
-
-**Ready-to-use batch scripts:**
+All batch scripts are pre-configured and ready to use after running `./setup.sh`:
 
 - `multi_dataset_sampling_batch.sh` ✅
 - `jaccard_batch.sh` ✅
@@ -76,22 +53,28 @@ APPTAINER=$PWD/tools/apptainer/bin/apptainer
 - **Apache Spark**: Distributed computing framework
 - **Python**: 3.12+ with PySpark
 - **Anaconda**: Scientific Python environment (`apps/anaconda/2024-10`) for analysis and plotting
-- **SLURM**: HPC job scheduler with organized output managementTSEQCOMP/
-  ├── apptainer*local/ # Local Apptainer installation
-  │ └── bin/
-  │ └── apptainer # Apptainer executable
-  ├── input/ # Input datasets (organized by species)
-  ├── output/ # Analysis results and samples
-  │ ├── samples_parquet/ # Sampled datasets with timestamps
-  │ ├── protein_comparison/ # Jaccard and MinHash analysis results
-  │ └── benchmark_results/ # Performance analysis with plots
-  ├── slurm/ # SLURM job output logs (.out/.err files)
-  ├── plots/ # Generated visualization plots
-  ├── *.sh # SLURM batch job scripts
-  ├── \_.py # Python analysis scripts
-  └── README.md # Project documentation
+- **SLURM**: HPC job scheduler with organized output management
 
-````s approaches:
+## 📁 Project Structure
+
+```
+OMICS.PROTSEQCOMP/
+├── tools/                         # Local Apptainer installation (ignored by git)
+│   └── apptainer/
+│       └── bin/apptainer
+├── input/                         # Input datasets (organized by species)
+├── output/                        # Analysis results and samples
+│   ├── samples_parquet/          # Sampled datasets with timestamps
+│   ├── protein_comparison/       # Jaccard and MinHash analysis results
+│   └── benchmark_results/        # Performance analysis with plots
+├── slurm/                        # SLURM job output logs (.out/.err files)
+├── plots/                        # Generated visualization plots
+├── setup.sh                     # Automated setup script
+├── *.sh                         # SLURM batch job scripts
+├── *.py                         # Python analysis scripts
+├── .gitignore                    # Git ignore rules
+└── README.md                     # Project documentation
+```
 
 ### Task 1: Setting up Apptainer with ADAM ⚙️
 
@@ -99,9 +82,11 @@ APPTAINER=$PWD/tools/apptainer/bin/apptainer
 
 ADAM (A Distributed Alignment Manager) is a genomics analysis platform built on Apache Spark. Follow these steps to set up the environment on HPC:
 
-#### 1. Clone Repository and Setup
+**Prerequisites**: Complete the Quick Start setup above.
 
-First, clone this repository and set up the environment:
+#### Launch Apptainer Container
+
+Launch the ADAM container using the local installation:
 
 ```bash
 # Clone the repository
@@ -129,23 +114,15 @@ cd ..
 
 # Verify installation
 ./tools/apptainer/bin/apptainer --version
-````
+```
 
 #### 2. Verify Configuration
 
 All batch scripts are pre-configured to use the local installation:
 
-```bash
+````bash
 # Verify the configuration (optional)
-grep "APPTAINER=" *.sh
-# Should show: APPTAINER=$PWD/tools/apptainer/bin/apptainer
-```
 
-No configuration needed! All scripts are ready to use after running `./setup.sh`.
-
-#### 3. Launch Apptainer Container
-
-Now you can launch the ADAM container using the local installation:
 
 ```bash
 # Using the local Apptainer installation
@@ -153,7 +130,7 @@ Now you can launch the ADAM container using the local installation:
 
 # Or using the configured environment variable (after running batch scripts)
 $APPTAINER shell --overlay overlay docker://quay.io/biocontainers/adam:1.0.1--hdfd78af_0
-```
+````
 
 #### 4. Verify ADAM Installation
 
