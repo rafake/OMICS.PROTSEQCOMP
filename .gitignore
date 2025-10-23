@@ -1,3 +1,8 @@
+# Python cache files
+__pycache__/
+*.py[cod]
+*$py.class
+
 # SLURM output files
 *.out
 slurm-*.out
@@ -12,33 +17,14 @@ slurm*.err
 *.o[0-9]*
 *.e[0-9]*
 
-# Python cache files
-__pycache__/
-*.py[cod]
-*$py.class
-
-# Output files from test scripts
-hello_world_output.txt
+# SLURM and analysis output directories
+slurm/
 
 # Input and output directories
 input/
 output/
-data/
-results/
-samples_parquet/
-samples_csv/
-mouse_protein/
-zebrafish_protein/
-mouse_protein_parquet/
-zebrafish_protein_parquet/
-mouse_protein_sample_100/
-zebrafish_protein_sample_100/
 
-# Analysis output directories
-slurm/
-plots/
-
-# Data files
+# Data files (when working with actual datasets)
 *.zip
 *.fa
 *.faa
