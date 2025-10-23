@@ -12,14 +12,10 @@ This project focuses on protein sequence comparison and analysis using modern bi
 After cloning this repository, follow these essential setup steps:
 
 ```bash
-# 1. Clone the repository
-git clone https://github.com/rafake/OMICS.PROTSEQCOMP.git
-cd OMICS.PROTSEQCOMP
-
-# 2. Run the automated setup script (downloads Apptainer to tools/ directory)
+# 1. Run the automated setup script (downloads Apptainer to tools/ directory)
 ./setup.sh
 
-# 3. Verify setup
+# 2. Verify setup
 ./tools/apptainer/bin/apptainer --version
 ```
 
@@ -84,7 +80,7 @@ ADAM (A Distributed Alignment Manager) is a genomics analysis platform built on 
 
 **Prerequisites**: Complete the Quick Start setup above.
 
-#### Launch Apptainer Container
+#### 1. Launch Apptainer Container
 
 ```bash
 # Launch ADAM container
@@ -104,7 +100,7 @@ All batch scripts are pre-configured to use the local installation:
 $APPTAINER shell --overlay overlay docker://quay.io/biocontainers/adam:1.0.1--hdfd78af_0
 ```
 
-#### 4. Verify ADAM Installation
+#### 3. Verify ADAM Installation
 
 Once inside the Apptainer shell (`Apptainer>`), test if ADAM is working:
 
@@ -112,7 +108,7 @@ Once inside the Apptainer shell (`Apptainer>`), test if ADAM is working:
 adam-submit --help
 ```
 
-#### 5. Environment Configuration (if needed)
+#### 4. Environment Configuration (if needed)
 
 If ADAM doesn't work initially, configure the Spark environment:
 
