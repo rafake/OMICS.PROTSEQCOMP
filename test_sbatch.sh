@@ -9,7 +9,7 @@
 #SBATCH --output=slurm/test-task-%j.out
 #SBATCH --error=slurm/test-task-%j.err
 
-APPTAINER=$HOME/zadanie/1_environment/apptainer_local/bin/apptainer
+APPTAINER=$PWD/tools/apptainer/bin/apptainer
 
 # Create slurm output directory
 mkdir -p slurm

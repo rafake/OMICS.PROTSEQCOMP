@@ -10,7 +10,8 @@
 #SBATCH --output=slurm/multi-sampling-task-%j.out
 #SBATCH --error=slurm/multi-sampling-task-%j.err
 
-APPTAINER=$HOME/zadanie/1_environment/apptainer_local/bin/apptainer
+# Apptainer path (local installation in repository)
+APPTAINER=$PWD/tools/apptainer/bin/apptainer
 
 # Create slurm output directory
 mkdir -p slurm

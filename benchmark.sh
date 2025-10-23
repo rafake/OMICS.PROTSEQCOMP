@@ -10,7 +10,7 @@
 #SBATCH --error=slurm/OMICS-multi-benchmark-%j.err
 
 # Set up environment
-APPTAINER=$HOME/zadanie/1_environment/apptainer_local/bin/apptainer
+APPTAINER=$PWD/tools/apptainer/bin/apptainer
 
 # Create slurm output directory
 mkdir -p slurm

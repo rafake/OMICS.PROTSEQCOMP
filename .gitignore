@@ -24,6 +24,9 @@ slurm/
 input/
 output/
 
+# Local tools and dependencies
+tools/
+
 # Data files (when working with actual datasets)
 *.zip
 *.fa
