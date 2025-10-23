@@ -10,8 +10,19 @@
 #SBATCH --output=benchmark-analysis-%j.out
 #SBATCH --error=benchmark-analysis-%j.err
 
-# Set up environment
-APPTAINER=$HOME/zadanie/1_environment/apptainer_local/bin/apptainer
+# Load Anaconda module for Python environment with matplotlib
+echo "Loading Anaconda module..."
+module load apps/anaconda/2024-10
+
+# Verify Python and required packages are available
+echo "Python version:"
+python --version
+echo "Checking required packages..."
+python -c "import matplotlib, pandas; print('matplotlib and pandas are available')" 2>/dev/null || {
+    echo "Warning: matplotlib or pandas may not be available"
+    echo "Attempting to install with conda..."
+    conda install -y matplotlib pandas
+}
 
 # Create slurm and plots output directories
 mkdir -p slurm plots
@@ -19,6 +30,7 @@ mkdir -p slurm plots
 echo "Starting benchmark results analysis job..."
 echo "SLURM Job ID: $SLURM_JOB_ID"
 echo "SLURM output files will be moved to: slurm/benchmark-analysis-$SLURM_JOB_ID.out/err"
+echo "Using Anaconda Python environment"
 echo "Start time: $(date)"
 
 # Check if analysis script exists
@@ -72,8 +84,7 @@ mkdir -p plots
 echo "Running benchmark analysis..."
 echo "============================================================================"
 
-# Run the Python analysis script inside Apptainer container
-$APPTAINER exec docker://quay.io/biocontainers/adam:1.0.1--hdfd78af_0 \
+# Run the Python analysis script using Anaconda Python
 python analyze_benchmark_results.py "$BENCHMARK_DIR"
 
 ANALYSIS_RESULT=$?
