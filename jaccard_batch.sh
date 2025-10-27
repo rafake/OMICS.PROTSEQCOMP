@@ -11,7 +11,7 @@
 #SBATCH --error=slurm/jaccard-analysis-%j.err
 
 # Set up environment
-APPTAINER=$PWD/tools/apptainer/bin/apptainer
+APPTAINER=$PWD/tools/bin/apptainer
 
 # Create slurm output directory
 mkdir -p slurm
