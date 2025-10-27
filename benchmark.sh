@@ -3,6 +3,7 @@
 #SBATCH -N 1                        # number of nodes (1 node is sufficient)
 #SBATCH -n 1                        # number of tasks (1 task)
 #SBATCH -c 16                       # request 16 CPUs per task (maximum we'll use)
+#SBATCH --mem=5000                  # request 8GB memory to avoid OOM errors
 #SBATCH --time=00:05:00             # longer time limit for multiple runs
 #SBATCH -A g100-2238                # your computational grant
 #SBATCH -p topola                   # partition, i.e., "queue"
