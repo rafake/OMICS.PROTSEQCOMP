@@ -29,7 +29,7 @@ if ! [[ "$NUM_SAMPLES" =~ ^[0-9]+$ ]] || [ "$NUM_SAMPLES" -eq 0 ]; then
 fi
 
 # Apptainer path (local installation in repository)
-APPTAINER=$PWD/tools/bin/apptainer
+APPTAINER=$PWD/tools/apptainer/bin/apptainer
 
 # Create slurm output directory
 mkdir -p slurm

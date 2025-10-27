@@ -22,7 +22,7 @@ mkdir -p tools
 # Install Apptainer using unprivileged installation
 echo "⬇️  Installing Apptainer (unprivileged)..."
 curl -s https://raw.githubusercontent.com/apptainer/apptainer/main/tools/install-unprivileged.sh | \
-    bash -s - tools
+    bash -s - tools/apptainer
 
 # Create necessary directories
 echo "📂 Creating project directories..."
@@ -33,10 +33,10 @@ echo "✅ Batch scripts are pre-configured to use local Apptainer installation"
 
 # Verify installation
 echo "✅ Verifying installation..."
-if ./tools/bin/apptainer --version > /dev/null 2>&1; then
+if ./tools/apptainer/bin/apptainer --version > /dev/null 2>&1; then
     echo "🎉 Setup completed successfully!"
     echo ""
-    echo "Apptainer version: $(./tools/bin/apptainer --version)"
+    echo "Apptainer version: $(./tools/apptainer/bin/apptainer --version)"
     echo ""
     echo "You can now run the project tasks. Start with:"
     echo "  sbatch multi_dataset_sampling_batch.sh"
