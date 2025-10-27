@@ -4,7 +4,7 @@
 #SBATCH -n 1                        # number of tasks (1 task)
 #SBATCH -c 16                       # request 16 CPUs per task (maximum we'll use)
 #SBATCH --mem=32000                 # request 32GB memory for large dataset processing
-#SBATCH --time=00:30:00             # extended time limit for large datasets
+#SBATCH --time=10:30:00             # extended time limit for large datasets
 #SBATCH -A g100-2238                # your computational grant
 #SBATCH -p topola                   # partition, i.e., "queue"
 #SBATCH --output=slurm/OMICS-multi-benchmark-%j.out
