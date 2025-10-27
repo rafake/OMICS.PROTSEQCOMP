@@ -120,15 +120,21 @@ for CORES in "${CORE_COUNTS[@]}"; do
     echo "========================================="
     
     # Run benchmark using srun with specified core count
+    # Ensure we don't exceed the allocated CPUs
+    if [ $CORES -gt 16 ]; then
+        echo "Warning: Requested $CORES cores exceeds allocated 16 cores, skipping..."
+        continue
+    fi
+    
     if [[ "$USE_CONTAINER" == "true" ]]; then
         echo "Using ADAM container (fallback mode)"
-        srun -N 1 -n 1 -c $CORES \
+        srun -c $CORES \
         $APPTAINER exec docker://quay.io/biocontainers/adam:1.0.1--hdfd78af_0 \
         bash -c "export SPARK_DRIVER_MEMORY=$SPARK_DRIVER_MEMORY; export SPARK_EXECUTOR_MEMORY=$SPARK_EXECUTOR_MEMORY; export SPARK_DRIVER_MAXRESULTSIZE=$SPARK_DRIVER_MAXRESULTSIZE; export SPARK_SERIALIZER=$SPARK_SERIALIZER; export SPARK_DRIVER_OPTS='$SPARK_DRIVER_OPTS'; export SPARK_EXECUTOR_OPTS='$SPARK_EXECUTOR_OPTS'; time python ${COMPARISON_METHOD}.py --no-save" \
         > output/benchmark_results/${SAMPLE_TIMESTAMP}/${COMPARISON_METHOD}_benchmark_${CORES}cores.out 2>&1
     else
         echo "Using native Anaconda Python (optimized for benchmarking)"
-        srun -N 1 -n 1 -c $CORES \
+        srun -c $CORES \
         bash -c "module load apps/anaconda/2024-10; export SPARK_DRIVER_MEMORY=$SPARK_DRIVER_MEMORY; export SPARK_EXECUTOR_MEMORY=$SPARK_EXECUTOR_MEMORY; export SPARK_DRIVER_MAXRESULTSIZE=$SPARK_DRIVER_MAXRESULTSIZE; export SPARK_SERIALIZER=$SPARK_SERIALIZER; export SPARK_DRIVER_OPTS='$SPARK_DRIVER_OPTS'; export SPARK_EXECUTOR_OPTS='$SPARK_EXECUTOR_OPTS'; time python ${COMPARISON_METHOD}.py --no-save" \
         > output/benchmark_results/${SAMPLE_TIMESTAMP}/${COMPARISON_METHOD}_benchmark_${CORES}cores.out 2>&1
     fi
