@@ -3,8 +3,8 @@
 #SBATCH -N 1                        # number of nodes (1 node is sufficient)
 #SBATCH -n 1                        # number of tasks (1 task)
 #SBATCH -c 16                       # request 16 CPUs per task (maximum we'll use)
-#SBATCH --mem=5000                  # request 8GB memory to avoid OOM errors
-#SBATCH --time=00:05:00             # longer time limit for multiple runs
+#SBATCH --mem=16000                 # request 16GB memory for Spark/MinHash processing
+#SBATCH --time=00:15:00             # longer time limit for memory-intensive operations
 #SBATCH -A g100-2238                # your computational grant
 #SBATCH -p topola                   # partition, i.e., "queue"
 #SBATCH --output=slurm/OMICS-multi-benchmark-%j.out
@@ -15,6 +15,12 @@ APPTAINER=$PWD/tools/apptainer/bin/apptainer
 
 # Create slurm output directory
 mkdir -p slurm
+
+# Configure Spark memory settings for large datasets
+export SPARK_DRIVER_MEMORY="8g"
+export SPARK_EXECUTOR_MEMORY="8g"
+export SPARK_DRIVER_MAXRESULTSIZE="4g"
+export SPARK_SERIALIZER="org.apache.spark.serializer.KryoSerializer"
 
 # Check for required comparison method parameter
 if [[ -z "$1" ]]; then
@@ -101,7 +107,7 @@ for CORES in "${CORE_COUNTS[@]}"; do
     # Run benchmark using srun with specified core count
     srun -N 1 -n 1 -c $CORES \
     $APPTAINER exec docker://quay.io/biocontainers/adam:1.0.1--hdfd78af_0 \
-    bash -c "time python ${COMPARISON_METHOD}.py --no-save" \
+    bash -c "export SPARK_DRIVER_MEMORY=$SPARK_DRIVER_MEMORY; export SPARK_EXECUTOR_MEMORY=$SPARK_EXECUTOR_MEMORY; export SPARK_DRIVER_MAXRESULTSIZE=$SPARK_DRIVER_MAXRESULTSIZE; export SPARK_SERIALIZER=$SPARK_SERIALIZER; time python ${COMPARISON_METHOD}.py --no-save" \
     > output/benchmark_results/${SAMPLE_TIMESTAMP}/${COMPARISON_METHOD}_benchmark_${CORES}cores.out 2>&1
     
     # Check if the benchmark completed successfully
