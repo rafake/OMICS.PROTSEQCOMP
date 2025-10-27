@@ -16,6 +16,10 @@ APPTAINER=$PWD/tools/apptainer/bin/apptainer
 # Create slurm output directory
 mkdir -p slurm
 
+# Load Anaconda module for better performance benchmarking
+echo "Loading Anaconda module for native Python/Spark execution..."
+module load apps/anaconda/2024-10
+
 # Configure Spark memory settings for large datasets
 export SPARK_DRIVER_MEMORY="12g"
 export SPARK_EXECUTOR_MEMORY="12g"
@@ -24,6 +28,14 @@ export SPARK_SERIALIZER="org.apache.spark.serializer.KryoSerializer"
 # Additional JVM tuning for large datasets
 export SPARK_DRIVER_OPTS="-XX:+UseG1GC -XX:MaxGCPauseMillis=200"
 export SPARK_EXECUTOR_OPTS="-XX:+UseG1GC -XX:MaxGCPauseMillis=200"
+
+# Verify Python and PySpark availability
+echo "Python version: $(python --version)"
+echo "Testing PySpark availability..."
+python -c "from pyspark.sql import SparkSession; print('PySpark is available')" || {
+    echo "Warning: PySpark not available in Anaconda, falling back to ADAM container"
+    USE_CONTAINER=true
+}
 
 # Check for required comparison method parameter
 if [[ -z "$1" ]]; then
@@ -108,10 +120,18 @@ for CORES in "${CORE_COUNTS[@]}"; do
     echo "========================================="
     
     # Run benchmark using srun with specified core count
-    srun -N 1 -n 1 -c $CORES \
-    $APPTAINER exec docker://quay.io/biocontainers/adam:1.0.1--hdfd78af_0 \
-    bash -c "export SPARK_DRIVER_MEMORY=$SPARK_DRIVER_MEMORY; export SPARK_EXECUTOR_MEMORY=$SPARK_EXECUTOR_MEMORY; export SPARK_DRIVER_MAXRESULTSIZE=$SPARK_DRIVER_MAXRESULTSIZE; export SPARK_SERIALIZER=$SPARK_SERIALIZER; export SPARK_DRIVER_OPTS='$SPARK_DRIVER_OPTS'; export SPARK_EXECUTOR_OPTS='$SPARK_EXECUTOR_OPTS'; time python ${COMPARISON_METHOD}.py --no-save" \
-    > output/benchmark_results/${SAMPLE_TIMESTAMP}/${COMPARISON_METHOD}_benchmark_${CORES}cores.out 2>&1
+    if [[ "$USE_CONTAINER" == "true" ]]; then
+        echo "Using ADAM container (fallback mode)"
+        srun -N 1 -n 1 -c $CORES \
+        $APPTAINER exec docker://quay.io/biocontainers/adam:1.0.1--hdfd78af_0 \
+        bash -c "export SPARK_DRIVER_MEMORY=$SPARK_DRIVER_MEMORY; export SPARK_EXECUTOR_MEMORY=$SPARK_EXECUTOR_MEMORY; export SPARK_DRIVER_MAXRESULTSIZE=$SPARK_DRIVER_MAXRESULTSIZE; export SPARK_SERIALIZER=$SPARK_SERIALIZER; export SPARK_DRIVER_OPTS='$SPARK_DRIVER_OPTS'; export SPARK_EXECUTOR_OPTS='$SPARK_EXECUTOR_OPTS'; time python ${COMPARISON_METHOD}.py --no-save" \
+        > output/benchmark_results/${SAMPLE_TIMESTAMP}/${COMPARISON_METHOD}_benchmark_${CORES}cores.out 2>&1
+    else
+        echo "Using native Anaconda Python (optimized for benchmarking)"
+        srun -N 1 -n 1 -c $CORES \
+        bash -c "module load apps/anaconda/2024-10; export SPARK_DRIVER_MEMORY=$SPARK_DRIVER_MEMORY; export SPARK_EXECUTOR_MEMORY=$SPARK_EXECUTOR_MEMORY; export SPARK_DRIVER_MAXRESULTSIZE=$SPARK_DRIVER_MAXRESULTSIZE; export SPARK_SERIALIZER=$SPARK_SERIALIZER; export SPARK_DRIVER_OPTS='$SPARK_DRIVER_OPTS'; export SPARK_EXECUTOR_OPTS='$SPARK_EXECUTOR_OPTS'; time python ${COMPARISON_METHOD}.py --no-save" \
+        > output/benchmark_results/${SAMPLE_TIMESTAMP}/${COMPARISON_METHOD}_benchmark_${CORES}cores.out 2>&1
+    fi
     
     # Check if the benchmark completed successfully
     if [ $? -eq 0 ]; then
