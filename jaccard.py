@@ -7,12 +7,17 @@ import sys
 from datetime import datetime
 
 # ----------------------------------------------------------
-# 0️⃣ Check for no-save parameter and working directory
+# 0️⃣ Check for parameters and working directory
 # ----------------------------------------------------------
 # Check if --no-save parameter is passed
 no_save_mode = "--no-save" in sys.argv or "--dry-run" in sys.argv
 if no_save_mode:
     print("Running in NO-SAVE mode - results will only be displayed, not saved")
+
+# Check if --limit-100 parameter is passed
+limit_100_mode = "--limit-100" in sys.argv
+if limit_100_mode:
+    print("Running in LIMIT-100 mode - only 100 random sequences per dataset will be used")
 
 print("Current working directory:", os.getcwd())
 
@@ -37,10 +42,19 @@ mouse_df = spark.read.format("parquet").load(mouse_path)
 fish_df  = spark.read.format("parquet").load(fish_path)
 
 # ----------------------------------------------------------
-# 3️⃣ Sample 100 random sequences from each species
+# 3️⃣ Use all sequences from sample data or limit to 100 if flag is set
 # ----------------------------------------------------------
-mouse_sample = mouse_df.select("name", "sequence").orderBy(rand()).limit(100)
-fish_sample  = fish_df.select("name", "sequence").orderBy(rand()).limit(100)
+print(f"Mouse dataset contains {mouse_df.count()} sequences")
+print(f"Fish dataset contains {fish_df.count()} sequences")
+
+if limit_100_mode:
+    print("Limiting to 100 random sequences per dataset")
+    mouse_sample = mouse_df.select("name", "sequence").orderBy(rand()).limit(100)
+    fish_sample  = fish_df.select("name", "sequence").orderBy(rand()).limit(100)
+else:
+    print("Using all sequences from sample data")
+    mouse_sample = mouse_df.select("name", "sequence")
+    fish_sample  = fish_df.select("name", "sequence")
 
 # ----------------------------------------------------------
 # 4️⃣ Define a helper function to extract unique 3-mers
