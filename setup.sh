@@ -6,6 +6,8 @@
 #SBATCH --time=00:05:00             
 #SBATCH -p topola                   
 #SBATCH -A g100-2238
+#SBATCH --output=slurm/setup-%j.out
+#SBATCH --error=slurm/setup-%j.err
 
 echo "🧬 OMICS.PROTSEQCOMP Setup Script"
 echo "================================="
