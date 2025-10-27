@@ -1,14 +1,11 @@
 #!/bin/bash -l
-#SBATCH -J omics-setup
-#SBATCH --nodes=1
-#SBATCH --ntasks-per-node=1
-#SBATCH --cpus-per-task=2
-#SBATCH --mem=2000
-#SBATCH --partition topola
-#SBATCH --time=00:15:00
+#SBATCH -J OMICS-setup    # job name
+#SBATCH -N 1                        # number of nodes (1 node is sufficient)
+#SBATCH -n 1                        # number of tasks (1 task)
+#SBATCH -c 1                       
+#SBATCH --time=00:05:00             
+#SBATCH -p topola                   
 #SBATCH -A g100-2238
-#SBATCH --output=slurm/setup-%j.out
-#SBATCH --error=slurm/setup-%j.err
 
 echo "🧬 OMICS.PROTSEQCOMP Setup Script"
 echo "================================="
