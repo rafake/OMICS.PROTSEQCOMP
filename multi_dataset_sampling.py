@@ -10,6 +10,7 @@ dataset_name = globals().get('dataset_name', 'unknown')
 input_path = globals().get('input_path', 'input/')
 batch_output_dir = globals().get('batch_output_dir', 'output/samples_parquet')
 batch_timestamp = globals().get('batch_timestamp', datetime.now().strftime("%Y%m%d_%H%M%S"))
+num_samples = int(globals().get('num_samples', 100))  # Default to 100 samples
 
 # Initialize Spark session
 spark = SparkSession.builder \
@@ -30,16 +31,19 @@ try:
     
     total_count = df.count()
     print(f"Total protein sequences in {dataset_name}: {total_count}")
+    print(f"Requested number of samples: {num_samples}")
     
     if total_count == 0:
         print(f"No data found in {dataset_name}, skipping sampling")
+    elif num_samples > total_count:
+        raise ValueError(f"Error: Requested number of samples ({num_samples}) exceeds total number of sequences ({total_count}) in dataset {dataset_name}")
     else:
         # Display schema
         print("Dataset schema:")
         df.printSchema()
         
-        # Take sample (100 or all if less than 100)
-        sample_size = min(100, total_count)
+        # Take sample (requested number or all if less than requested)
+        sample_size = min(num_samples, total_count)
         print(f"Taking {sample_size} random samples...")
         
         # Sampling - Convert to RDD and take random rows
@@ -54,7 +58,7 @@ try:
         df_sample.show(5, truncate=False)
         
         # Save to Parquet format (single file) with batch timestamp
-        output_parquet = f"{batch_output_dir}/{batch_timestamp}_100_{dataset_name}"
+        output_parquet = f"{batch_output_dir}/{batch_timestamp}_{sample_size}_{dataset_name}"
         print(f"Saving samples to Parquet: {output_parquet}")
         df_sample.coalesce(1).write.mode("overwrite").parquet(output_parquet)
         
