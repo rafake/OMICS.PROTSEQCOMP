@@ -32,6 +32,10 @@ echo "SLURM Job ID: $SLURM_JOB_ID"
 echo "SLURM output files will be moved to: slurm/benchmark-analysis-$SLURM_JOB_ID.out/err"
 echo "Using Anaconda Python environment"
 echo "Start time: $(date)"
+echo ""
+echo "Usage options:"
+echo "  sbatch analyze_benchmark_batch.sh                    # Analyze latest benchmark results"
+echo "  sbatch analyze_benchmark_batch.sh <directory_path>   # Analyze specific directory"
 
 # Check if analysis script exists
 if [[ ! -f "analyze_benchmark_results.py" ]]; then
@@ -40,20 +44,42 @@ if [[ ! -f "analyze_benchmark_results.py" ]]; then
     exit 1
 fi
 
-# Check for required directory parameter
-if [[ -z "$1" ]]; then
-    echo "Error: Missing required parameter!"
-    echo "Usage: sbatch analyze_benchmark_batch.sh <benchmark_directory>"
-    echo ""
-    echo "Example:"
-    echo "  sbatch analyze_benchmark_batch.sh output/benchmark_results/20251023_145030"
-    echo ""
-    echo "The directory should contain files matching: *_benchmark_*cores.out"
-    exit 1
+# Check for optional directory parameter or find latest automatically
+if [[ -n "$1" ]]; then
+    BENCHMARK_DIR="$1"
+    echo "Using specified benchmark directory: $BENCHMARK_DIR"
+else
+    # Find the latest benchmark directory automatically
+    echo "No directory specified, searching for latest benchmark results..."
+    
+    # Check if output/benchmark_results exists
+    if [[ ! -d "output/benchmark_results" ]]; then
+        echo "Error: output/benchmark_results directory does not exist"
+        echo "Please run benchmark.sh first to generate benchmark results."
+        echo ""
+        echo "Usage examples:"
+        echo "  sbatch benchmark.sh jaccard"
+        echo "  sbatch benchmark.sh minhash"
+        exit 1
+    fi
+    
+    # Find all benchmark directories (timestamp format: YYYYMMDD_HHMMSS)
+    BENCHMARK_DIRS=($(find output/benchmark_results -maxdepth 1 -type d -name "*_*" | sort))
+    
+    if [[ ${#BENCHMARK_DIRS[@]} -eq 0 ]]; then
+        echo "Error: No benchmark result directories found in output/benchmark_results/"
+        echo "Please run benchmark.sh first to generate benchmark results."
+        echo ""
+        echo "Usage examples:"
+        echo "  sbatch benchmark.sh jaccard"
+        echo "  sbatch benchmark.sh minhash"
+        exit 1
+    fi
+    
+    # Get the latest benchmark directory (last in sorted array)
+    BENCHMARK_DIR="${BENCHMARK_DIRS[-1]}"
+    echo "Found latest benchmark directory: $BENCHMARK_DIR"
 fi
-
-BENCHMARK_DIR="$1"
-echo "Using specified benchmark directory: $BENCHMARK_DIR"
 
 # Verify the directory exists and contains benchmark files
 if [[ ! -d "$BENCHMARK_DIR" ]]; then
