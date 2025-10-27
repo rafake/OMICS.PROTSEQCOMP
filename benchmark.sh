@@ -2,8 +2,8 @@
 #SBATCH -J OMICS-multi-benchmark    # job name
 #SBATCH -N 1                        # number of nodes (1 node is sufficient)
 #SBATCH -n 1                        # number of tasks (1 task)
-#SBATCH -c 16                       # request 16 CPUs per task (maximum we'll use)
-#SBATCH --mem=32000                 # request 32GB memory for large dataset processing
+#SBATCH -c 24                       # request 24 CPUs per task (maximum we'll use)
+#SBATCH --mem=110000                 # request 110GB memory for large dataset processing
 #SBATCH --time=10:30:00             # extended time limit for large datasets
 #SBATCH -A g100-2238                # your computational grant
 #SBATCH -p topola                   # partition, i.e., "queue"
