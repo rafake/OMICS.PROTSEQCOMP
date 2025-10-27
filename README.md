@@ -9,13 +9,19 @@ This project focuses on protein sequence comparison and analysis using modern bi
 
 ## 🚀 Quick Start
 
-After cloning this repository, follow these essential setup steps:
+Clone this repository and follow these essential setup steps:
 
 ```bash
-# 1. Run the automated setup script (downloads Apptainer to tools/ directory)
+# 1. Clone the repository
+git clone https://github.com/rafake/OMICS.PROTSEQCOMP.git
+
+# 2. Navigate to the project directory
+cd OMICS.PROTSEQCOMP
+
+# 3. Run the automated setup script (downloads Apptainer to tools/ directory)
 ./setup.sh
 
-# 2. Verify setup
+# 4. Verify setup
 ./tools/apptainer/bin/apptainer --version
 ```
 
