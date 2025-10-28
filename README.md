@@ -359,57 +359,48 @@ The Jaccard similarity score ranges from 0 to 1:
 - **0.1-0.5**: Moderate similarity (possible functional relationship)
 - **0.0**: No shared k-mers (likely unrelated)
 
+
 ### Task 6: Performance Benchmarking ⚡
 
-**Objective**: Measure and analyze computational performance across different CPU configurations using automated SLURM array jobs
+**Objective**: Measure and analyze computational performance across different CPU configurations using automated SLURM jobs
 
 This task evaluates the scalability and performance characteristics of the protein comparison algorithms using systematic benchmarking across multiple CPU core configurations with a single command execution.
 
 #### Benchmark Features
 
-📄 **`benchmark.sh`** - Automated multi-core performance measurement script
+📄 **`benchmark.sh`** and **`benchmark-performance.sh`** - Automated multi-core performance measurement scripts
 
-This script uses SLURM array jobs to automatically test 5 CPU configurations (1, 2, 4, 8, 16 cores) with comprehensive resource usage measurement via `/usr/bin/time -v`. Both Jaccard and MinHash algorithms can be benchmarked.
+These scripts test multiple CPU configurations (1, 2, 4, 8, 16, 24 cores) with comprehensive resource usage measurement. Both Jaccard and MinHash algorithms can be benchmarked.
 
 #### Usage
 
 To run comprehensive performance benchmarks across all CPU configurations, specify the comparison method as a required parameter:
 
 ```bash
-# Benchmark Jaccard similarity analysis across 1, 2, 4, 8, 16 cores
+# Benchmark Jaccard similarity analysis
 sbatch benchmark.sh jaccard
 
-# Benchmark MinHash similarity analysis across 1, 2, 4, 8, 16 cores
+# Benchmark MinHash similarity analysis
 sbatch benchmark.sh minhash
+
+# High-performance (24-core, 110GB RAM) benchmarking with length filter
+sbatch benchmark-performance.sh minhash --length-filter
+sbatch benchmark-performance.sh jaccard --length-filter
 ```
 
-**SLURM Array Job System:**
-The benchmark script uses `#SBATCH --array=0-4` to automatically submit 5 separate tasks, each with a different CPU core configuration:
+**Optional parameters:**
+- `--length-filter` — Only compare protein pairs with sequence lengths within 10% of each other (biologically relevant filtering)
+- `-c <cores>` — Set maximum number of cores (default: 24 for performance script)
+- `-m <memory>` — Set memory in MB (default: 110000 for performance script)
+- `-t <time>` — Set time limit (default: 00:30:00 for performance script)
 
-- **Array Task 0**: 1 CPU core
-- **Array Task 1**: 2 CPU cores
-- **Array Task 2**: 4 CPU cores
-- **Array Task 3**: 8 CPU cores
-- **Array Task 4**: 16 CPU cores
-
-**Available Methods:**
-
-- `jaccard` - Benchmark Jaccard similarity analysis with k-mer comparison
-- `minhash` - Benchmark MinHash similarity analysis with LSH approximation
-
-**Error Handling:**
-The script validates input parameters and provides clear error messages:
-
+**Examples:**
 ```bash
-# Missing parameter
-sbatch benchmark.sh
-# Error: Missing required parameter!
-# Usage: sbatch benchmark.sh <comparison_method>
+# MinHash with length filtering and custom resources
+sbatch benchmark-performance.sh minhash --length-filter -c 24 -m 110000 -t 01:00:00
 
-# Invalid method
-sbatch benchmark.sh invalid
-# Error: Invalid comparison method 'invalid'
-# Available methods: jaccard, minhash
+# Jaccard without length filtering
+sbatch benchmark-performance.sh jaccard
 ```
 
 #### Output
@@ -421,28 +412,25 @@ output/
 └── benchmark_results/
     └── YYYYMMDD_HHMMSS/                    # Sample timestamp
         ├── jaccard_benchmark_1cores.out    # 1-core Jaccard benchmark
-        ├── jaccard_benchmark_2cores.out    # 2-core Jaccard benchmark
-        ├── jaccard_benchmark_4cores.out    # 4-core Jaccard benchmark
-        ├── jaccard_benchmark_8cores.out    # 8-core Jaccard benchmark
-        ├── jaccard_benchmark_16cores.out   # 16-core Jaccard benchmark
-        ├── minhash_benchmark_1cores.out    # 1-core MinHash benchmark
-        ├── minhash_benchmark_2cores.out    # 2-core MinHash benchmark
-        ├── minhash_benchmark_4cores.out    # 4-core MinHash benchmark
-        ├── minhash_benchmark_8cores.out    # 8-core MinHash benchmark
-        └── minhash_benchmark_16cores.out   # 16-core MinHash benchmark
+        ├── ...
+        ├── minhash_benchmark_24cores.out   # 24-core MinHash benchmark
 ```
 
 Each benchmark run uses the same sample data timestamp with clear separation between Jaccard and MinHash results. Filenames include CPU core count for easy identification, and analysis scripts run in no-save mode for accurate performance measurement with detailed execution time, memory usage, and CPU utilization metrics.
 
-**Performance Analysis:**
-This automated system enables comprehensive analysis of:
+#### Length Filter Usage
 
-- CPU core scalability (1 → 16 cores performance scaling)
-- Algorithm comparison (Jaccard vs MinHash efficiency)
-- Resource utilization patterns across different configurations
-- Optimal core count determination for specific workloads
+The `--length-filter` flag can be added to any Jaccard or MinHash run (batch or interactive) to restrict comparisons to protein pairs whose sequence lengths differ by no more than 10%. This improves biological relevance and performance:
 
-**Performance Analysis & Visualization:**
+```bash
+# Example: Jaccard with length filter
+python jaccard.py --length-filter
+
+# Example: MinHash with length filter
+python minhash.py --length-filter
+```
+
+#### Performance Analysis & Visualization
 
 📄 **`analyze_benchmark_batch.sh`** - Automated performance analysis and plotting script
 
@@ -455,26 +443,12 @@ sbatch analyze_benchmark_batch.sh
 
 This system uses the Anaconda module (`apps/anaconda/2024-10`) for scientific computing with Matplotlib to generate comprehensive performance visualization plots. It automatically detects benchmark directories, processes all available results, and saves plots directly in benchmark results directories alongside raw data.
 
-**Generated Plots:**
-The analysis system automatically creates performance visualization plots saved in each benchmark results directory, enabling easy comparison of:
-
-- CPU core scalability patterns
-- Algorithm performance comparison (Jaccard vs MinHash)
-- Memory usage trends across configurations
-- Execution time scaling analysis
-
-**Job Monitoring:**
-Monitor array job progress with standard SLURM commands:
+#### Job Monitoring
+Monitor job progress with standard SLURM commands:
 
 ```bash
 # Check job status
 squeue -u $USER
-
-# View specific array task output
-squeue -j <job_id>_<array_index>
-
-# Check all array tasks
-scontrol show job <job_id>
 
 # Check SLURM job logs
 ls slurm/
