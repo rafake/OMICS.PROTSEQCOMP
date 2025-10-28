@@ -62,9 +62,11 @@ python -c "from pyspark.sql import SparkSession; print('PySpark is available')" 
     USE_CONTAINER=true
 }
 
+
 # Parse parameters
 MAX_CORES=24
-COMPARISON_METHOD="$1"
+COMPARISON_METHOD=""
+LENGTH_FILTER_FLAG=""
 
 # Simple parameter parsing
 while [[ $# -gt 0 ]]; do
@@ -72,6 +74,7 @@ while [[ $# -gt 0 ]]; do
         -c) MAX_CORES="$2"; shift 2 ;;
         -m) MEMORY_MB="$2"; shift 2 ;;
         -t) TIME_LIMIT="$2"; shift 2 ;;
+        --length-filter) LENGTH_FILTER_FLAG="--length-filter"; shift ;;
         jaccard|minhash) COMPARISON_METHOD="$1"; shift ;;
         *) shift ;;
     esac
@@ -155,12 +158,12 @@ for CORES in "${CORE_COUNTS[@]}"; do
         echo "Using ADAM container (fallback mode)"
         srun -c $CORES \
         $APPTAINER exec docker://quay.io/biocontainers/adam:1.0.1--hdfd78af_0 \
-        bash -c "export SPARK_DRIVER_MEMORY=$SPARK_DRIVER_MEMORY; export SPARK_EXECUTOR_MEMORY=$SPARK_EXECUTOR_MEMORY; export SPARK_DRIVER_MAXRESULTSIZE=$SPARK_DRIVER_MAXRESULTSIZE; export SPARK_SERIALIZER='$SPARK_SERIALIZER'; export SPARK_DRIVER_OPTS='$SPARK_DRIVER_OPTS'; export SPARK_EXECUTOR_OPTS='$SPARK_EXECUTOR_OPTS'; export SPARK_SQL_SHUFFLE_PARTITIONS=$SPARK_SQL_SHUFFLE_PARTITIONS; export SPARK_DEFAULT_PARALLELISM=$SPARK_DEFAULT_PARALLELISM; time python ${COMPARISON_METHOD}.py --no-save" \
+        bash -c "export SPARK_DRIVER_MEMORY=$SPARK_DRIVER_MEMORY; export SPARK_EXECUTOR_MEMORY=$SPARK_EXECUTOR_MEMORY; export SPARK_DRIVER_MAXRESULTSIZE=$SPARK_DRIVER_MAXRESULTSIZE; export SPARK_SERIALIZER='$SPARK_SERIALIZER'; export SPARK_DRIVER_OPTS='$SPARK_DRIVER_OPTS'; export SPARK_EXECUTOR_OPTS='$SPARK_EXECUTOR_OPTS'; export SPARK_SQL_SHUFFLE_PARTITIONS=$SPARK_SQL_SHUFFLE_PARTITIONS; export SPARK_DEFAULT_PARALLELISM=$SPARK_DEFAULT_PARALLELISM; time python ${COMPARISON_METHOD}.py --no-save $LENGTH_FILTER_FLAG" \
         > output/benchmark_results/${SAMPLE_TIMESTAMP}/${COMPARISON_METHOD}_benchmark_${CORES}cores.out 2>&1
     else
         echo "Using native Anaconda Python (optimized for benchmarking)"
         srun -c $CORES \
-        bash -c "module load apps/anaconda/2024-10; export SPARK_DRIVER_MEMORY=$SPARK_DRIVER_MEMORY; export SPARK_EXECUTOR_MEMORY=$SPARK_EXECUTOR_MEMORY; export SPARK_DRIVER_MAXRESULTSIZE=$SPARK_DRIVER_MAXRESULTSIZE; export SPARK_SERIALIZER='$SPARK_SERIALIZER'; export SPARK_DRIVER_OPTS='$SPARK_DRIVER_OPTS'; export SPARK_EXECUTOR_OPTS='$SPARK_EXECUTOR_OPTS'; export SPARK_SQL_SHUFFLE_PARTITIONS=$SPARK_SQL_SHUFFLE_PARTITIONS; export SPARK_DEFAULT_PARALLELISM=$SPARK_DEFAULT_PARALLELISM; time python ${COMPARISON_METHOD}.py --no-save" \
+        bash -c "module load apps/anaconda/2024-10; export SPARK_DRIVER_MEMORY=$SPARK_DRIVER_MEMORY; export SPARK_EXECUTOR_MEMORY=$SPARK_EXECUTOR_MEMORY; export SPARK_DRIVER_MAXRESULTSIZE=$SPARK_DRIVER_MAXRESULTSIZE; export SPARK_SERIALIZER='$SPARK_SERIALIZER'; export SPARK_DRIVER_OPTS='$SPARK_DRIVER_OPTS'; export SPARK_EXECUTOR_OPTS='$SPARK_EXECUTOR_OPTS'; export SPARK_SQL_SHUFFLE_PARTITIONS=$SPARK_SQL_SHUFFLE_PARTITIONS; export SPARK_DEFAULT_PARALLELISM=$SPARK_DEFAULT_PARALLELISM; time python ${COMPARISON_METHOD}.py --no-save $LENGTH_FILTER_FLAG" \
         > output/benchmark_results/${SAMPLE_TIMESTAMP}/${COMPARISON_METHOD}_benchmark_${CORES}cores.out 2>&1
     fi
     
