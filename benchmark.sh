@@ -2,9 +2,9 @@
 #SBATCH -J OMICS-multi-benchmark    # job name
 #SBATCH -N 1                        # number of nodes (1 node is sufficient)
 #SBATCH -n 1                        # number of tasks (1 task)
-#SBATCH -c 24                       # request 24 CPUs per task (maximum we'll use)
-#SBATCH --mem=110000                 # request 110GB memory for large dataset processing
-#SBATCH --time=10:30:00             # extended time limit for large datasets
+#SBATCH -c 16                       # request 16 CPUs per task (maximum we'll use)
+#SBATCH --mem=32000                 # request 32GB memory for large dataset processing
+#SBATCH --time=00:30:00             # extended time limit for large datasets
 #SBATCH -A g100-2238                # your computational grant
 #SBATCH -p topola                   # partition, i.e., "queue"
 #SBATCH --output=slurm/OMICS-multi-benchmark-%j.out
@@ -37,36 +37,38 @@ python -c "from pyspark.sql import SparkSession; print('PySpark is available')" 
     USE_CONTAINER=true
 }
 
-# Check for required comparison method parameter
-if [[ -z "$1" ]]; then
-    echo "Error: Missing required parameter!"
-    echo "Usage: sbatch benchmark_multi_srun.sh <comparison_method>"
-    echo "Available methods:"
-    echo "  jaccard  - Benchmark Jaccard similarity analysis"
-    echo "  minhash  - Benchmark MinHash similarity analysis"
-    exit 1
-fi
-
+# Parse parameters
+MAX_CORES=16
 COMPARISON_METHOD="$1"
 
-# Validate comparison method
+# Simple parameter parsing
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        -c) MAX_CORES="$2"; shift 2 ;;
+        -m) MEMORY_MB="$2"; shift 2 ;;
+        -t) TIME_LIMIT="$2"; shift 2 ;;
+        jaccard|minhash) COMPARISON_METHOD="$1"; shift ;;
+        *) shift ;;
+    esac
+done
+
+# Check required parameter
 if [[ "$COMPARISON_METHOD" != "jaccard" && "$COMPARISON_METHOD" != "minhash" ]]; then
-    echo "Error: Invalid comparison method '$COMPARISON_METHOD'"
-    echo "Available methods: jaccard, minhash"
+    echo "Usage: sbatch benchmark.sh <jaccard|minhash> [-c cores] [-m memory] [-t time]"
     exit 1
 fi
 
 # Define core counts to test
-CORE_COUNTS=(1 2 4 8 16)
+CORE_COUNTS=(1 2 4)
+if [ $MAX_CORES -ge 8 ]; then CORE_COUNTS+=(8); fi
+if [ $MAX_CORES -ge 16 ]; then CORE_COUNTS+=(16); fi
 
 # Get the number of CPUs allocated to this job
 ALLOCATED_CPUS=${SLURM_CPUS_PER_TASK:-1}
 
 echo "Starting OMICS multi-core benchmark job..."
 echo "Benchmarking: $COMPARISON_METHOD analysis"
-echo "Allocated CPUs: $ALLOCATED_CPUS"
 echo "Testing core counts: ${CORE_COUNTS[*]}"
-echo "Note: $COMPARISON_METHOD script runs in no-save mode for pure performance measurement"
 echo "Start time: $(date)"
 
 # Find the latest sample directory based on timestamp
@@ -120,11 +122,6 @@ for CORES in "${CORE_COUNTS[@]}"; do
     echo "========================================="
     
     # Run benchmark using srun with specified core count
-    # Ensure we don't exceed the allocated CPUs
-    if [ $CORES -gt 16 ]; then
-        echo "Warning: Requested $CORES cores exceeds allocated 16 cores, skipping..."
-        continue
-    fi
     
     if [[ "$USE_CONTAINER" == "true" ]]; then
         echo "Using ADAM container (fallback mode)"
