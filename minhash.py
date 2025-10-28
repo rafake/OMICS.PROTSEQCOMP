@@ -1,5 +1,5 @@
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import udf, col, rand, explode, collect_list
+from pyspark.sql.functions import udf, col, rand, explode, collect_list, length, greatest, abs
 from pyspark.sql.types import ArrayType, StringType
 from pyspark.ml.feature import HashingTF, MinHashLSH
 import os
@@ -14,6 +14,11 @@ from datetime import datetime
 no_save_mode = "--no-save" in sys.argv or "--dry-run" in sys.argv
 if no_save_mode:
     print("Running in NO-SAVE mode - results will only be displayed, not saved")
+
+# Check if --length-filter parameter is passed
+length_filter_mode = "--length-filter" in sys.argv
+if length_filter_mode:
+    print("Running in LENGTH-FILTER mode - only comparing pairs with <10% length difference")
 
 print("Current working directory:", os.getcwd())
 
@@ -76,6 +81,11 @@ model = mh.fit(mouse_hashed.union(fish_hashed))
 mouse_mh = model.transform(mouse_hashed)
 fish_mh  = model.transform(fish_hashed)
 
+# For length filtering, add sequence length columns before MinHash
+if length_filter_mode:
+    mouse_mh = mouse_mh.withColumn("sequence_length", length(col("sequence")))
+    fish_mh = fish_mh.withColumn("sequence_length", length(col("sequence")))
+
 # ------------------------------------------------------------
 # 7️⃣ Compute pairwise MinHash similarities
 # ------------------------------------------------------------
@@ -90,12 +100,25 @@ similarities = model.approxSimilarityJoin(
 # ------------------------------------------------------------
 # 8️⃣ Process results
 # ------------------------------------------------------------
-# Convert Spark’s distance (1 - Jaccard) to similarity
-results = similarities.select(
-    col("datasetA.name").alias("mouse_id"),
-    col("datasetB.name").alias("fish_id"),
-    (1 - col("dist")).alias("minhash_similarity")
-)
+# Convert Spark's distance (1 - Jaccard) to similarity
+if length_filter_mode:
+    results = similarities.select(
+        col("datasetA.name").alias("mouse_id"),
+        col("datasetB.name").alias("fish_id"),
+        col("datasetA.sequence_length").alias("mouse_length"),
+        col("datasetB.sequence_length").alias("fish_length"),
+        (1 - col("dist")).alias("minhash_similarity")
+    ).filter(
+        abs(col("mouse_length") - col("fish_length")) / 
+        greatest(col("mouse_length"), col("fish_length")) <= 0.1
+    )
+    print("Applied length filtering: comparing only pairs with ≤10% length difference")
+else:
+    results = similarities.select(
+        col("datasetA.name").alias("mouse_id"),
+        col("datasetB.name").alias("fish_id"),
+        (1 - col("dist")).alias("minhash_similarity")
+    )
 
 # Get top-10 most similar pairs
 top10 = results.orderBy(col("minhash_similarity").desc()).limit(10)

@@ -1,5 +1,5 @@
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import udf, col, lit, size, rand
+from pyspark.sql.functions import udf, col, lit, size, rand, length, greatest, abs
 from pyspark.sql.types import FloatType, ArrayType, StringType
 import os
 import shutil
@@ -18,6 +18,11 @@ if no_save_mode:
 limit_100_mode = "--limit-100" in sys.argv
 if limit_100_mode:
     print("Running in LIMIT-100 mode - only 100 random sequences per dataset will be used")
+
+# Check if --length-filter parameter is passed
+length_filter_mode = "--length-filter" in sys.argv
+if length_filter_mode:
+    print("Running in LENGTH-FILTER mode - only comparing pairs with <10% length difference")
 
 print("Current working directory:", os.getcwd())
 
@@ -70,21 +75,35 @@ mouse_kmers = mouse_sample.withColumn("kmers", get_kmers_udf(col("sequence")))
 fish_kmers  = fish_sample.withColumn("kmers", get_kmers_udf(col("sequence")))
 
 # ----------------------------------------------------------
-# 5️⃣ Create all pairwise combinations (100 x 100 = 10,000)
+# 5️⃣ Create all pairwise combinations with optional length filtering
 # ----------------------------------------------------------
 # First alias the DataFrames to avoid column name conflicts
 mouse_kmers_aliased = mouse_kmers.alias("mouse")
 fish_kmers_aliased = fish_kmers.alias("fish")
 
-pairs = mouse_kmers_aliased.crossJoin(fish_kmers_aliased) \
+# Add sequence length columns for filtering
+mouse_kmers_with_length = mouse_kmers_aliased.withColumn("mouse_length", length(col("mouse.sequence")))
+fish_kmers_with_length = fish_kmers_aliased.withColumn("fish_length", length(col("fish.sequence")))
+
+pairs = mouse_kmers_with_length.crossJoin(fish_kmers_with_length) \
     .select(
         col("mouse.name").alias("mouse_id"),
         col("mouse.sequence").alias("mouse_seq"),
         col("mouse.kmers").alias("mouse_kmers"),
         col("fish.name").alias("fish_id"),
         col("fish.sequence").alias("fish_seq"),
-        col("fish.kmers").alias("fish_kmers")
+        col("fish.kmers").alias("fish_kmers"),
+        col("mouse_length"),
+        col("fish_length")
     )
+
+# Apply length filtering if requested
+if length_filter_mode:
+    pairs = pairs.filter(
+        abs(col("mouse_length") - col("fish_length")) / 
+        greatest(col("mouse_length"), col("fish_length")) <= 0.1
+    )
+    print("Applied length filtering: comparing only pairs with ≤10% length difference")
 
 # ----------------------------------------------------------
 # 6️⃣ Define a Jaccard similarity UDF

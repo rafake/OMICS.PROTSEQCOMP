@@ -16,12 +16,23 @@ APPTAINER=$PWD/tools/apptainer/bin/apptainer
 # Create slurm output directory
 mkdir -p slurm
 
-# Check for no-save parameter
+# Check for parameters
 NO_SAVE_FLAG=""
-if [[ "$1" == "--no-save" || "$1" == "--dry-run" ]]; then
-    NO_SAVE_FLAG="--no-save"
-    echo "Running in NO-SAVE mode - results will only be displayed, not saved"
-fi
+LENGTH_FILTER_FLAG=""
+
+# Parse all arguments
+for arg in "$@"; do
+    case $arg in
+        --no-save|--dry-run)
+            NO_SAVE_FLAG="--no-save"
+            echo "Running in NO-SAVE mode - results will only be displayed, not saved"
+            ;;
+        --length-filter)
+            LENGTH_FILTER_FLAG="--length-filter"
+            echo "Running with LENGTH-FILTER mode - only comparing pairs with ≤10% length difference"
+            ;;
+    esac
+done
 
 echo "Starting MinHash similarity analysis job..."
 echo "Start time: $(date)"
@@ -80,7 +91,7 @@ export MOUSE_ADAM_PATH
 export FISH_ADAM_PATH
 export SAMPLE_TIMESTAMP
 
-$APPTAINER exec docker://quay.io/biocontainers/adam:1.0.1--hdfd78af_0 python minhash.py $NO_SAVE_FLAG
+$APPTAINER exec docker://quay.io/biocontainers/adam:1.0.1--hdfd78af_0 python minhash.py $NO_SAVE_FLAG $LENGTH_FILTER_FLAG
 
 echo "MinHash analysis job completed!"
 echo "End time: $(date)"
