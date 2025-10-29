@@ -153,6 +153,7 @@ def create_performance_partitions_plot(df, partitions, output_dir=None):
     color_map = {'jaccard': '#2E86C1', 'minhash': '#E74C3C'}
     marker_map = {'jaccard': 'o', 'minhash': 's'}
     # Plot real_time for each method
+    failed_plotted = False
     for method in df['method'].unique():
         method_data = df[df['method'] == method].sort_values('cores')
         ax1.plot(method_data['cores'], method_data['real_time'],
@@ -163,9 +164,11 @@ def create_performance_partitions_plot(df, partitions, output_dir=None):
         for _, row in method_data.iterrows():
             ax1.annotate(f'{row["real_time"]:.1f}s', (row['cores'], row['real_time']),
                          textcoords="offset points", xytext=(0,10), ha='center', fontsize=9, alpha=0.8)
-            # Mark failed points with a red 'x'
-            if (method, row['cores']) in failed_benchmarks:
-                ax1.plot(row['cores'], row['real_time'], marker='x', color='red', markersize=14, markeredgewidth=3, label=None)
+        # Plot all failed points for this method at once for legend clarity
+        failed_rows = method_data[method_data.apply(lambda r: (method, r['cores']) in failed_benchmarks, axis=1)]
+        if not failed_rows.empty:
+            ax1.plot(failed_rows['cores'], failed_rows['real_time'], linestyle='none', marker='x', color='red', markersize=14, markeredgewidth=3, label='Failed benchmark' if not failed_plotted else None)
+            failed_plotted = True
     ax1.set_xlabel('CPU Cores', fontweight='bold')
     ax1.set_ylabel('Real Time (seconds)', fontweight='bold', color='black')
     ax1.grid(True, alpha=0.3)
