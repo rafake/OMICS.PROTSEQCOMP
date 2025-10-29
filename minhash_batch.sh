@@ -1,7 +1,7 @@
 #!/bin/bash -l
 #SBATCH -J minhash-analysis
-#SBATCH --nodes=1
-#SBATCH --ntasks-per-node=1
+#SBATCH -n 1
+#SBATCH -N 1
 #SBATCH -c 24
 #SBATCH --mem=110000
 #SBATCH --partition topola
