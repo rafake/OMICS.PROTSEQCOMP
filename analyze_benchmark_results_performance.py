@@ -73,6 +73,31 @@ def analyze_benchmark_directory(directory_path):
     df = df.sort_values(['method', 'cores'])
     return df
 
+def extract_spark_config_from_log(log_path):
+    """Extracts core count and Spark config (partitions, driver/executor memory, max result size) from the batch log file."""
+    config = {}
+    current_cores = None
+    with open(log_path, 'r') as f:
+        for line in f:
+            m = re.match(r"Spark configuration for (\d+) cores:", line)
+            if m:
+                current_cores = int(m.group(1))
+                config[current_cores] = {}
+            if current_cores is not None:
+                pm = re.match(r"\s*Partitions: (\d+)", line)
+                if pm:
+                    config[current_cores]['partitions'] = int(pm.group(1))
+                dm = re.match(r"\s*Driver memory: (\d+)m", line)
+                if dm:
+                    config[current_cores]['driver_memory'] = int(dm.group(1))
+                em = re.match(r"\s*Executor memory: (\d+)m", line)
+                if em:
+                    config[current_cores]['executor_memory'] = int(em.group(1))
+                mm = re.match(r"\s*Max result size: (\d+)m", line)
+                if mm:
+                    config[current_cores]['max_result_size'] = int(mm.group(1))
+    return config
+
 def create_performance_partitions_plot(df, partitions, output_dir=None):
     """Create line plots showing performance and partitions comparison."""
     if df is None or df.empty:
@@ -115,6 +140,47 @@ def create_performance_partitions_plot(df, partitions, output_dir=None):
         print(f"\nPlot saved to: {plot_path}")
     plt.show()
 
+def plot_spark_config(config, output_dir=None):
+    """Plot Spark configuration parameters (partitions, driver memory, executor memory, max result size) against core counts."""
+    if not config:
+        print("No Spark config data to plot")
+        return
+    cores = sorted(config.keys())
+    partitions = [config[c].get('partitions', None) for c in cores]
+    driver_mem = [config[c].get('driver_memory', None) for c in cores]
+    executor_mem = [config[c].get('executor_memory', None) for c in cores]
+    max_result = [config[c].get('max_result_size', None) for c in cores]
+
+    fig, axs = plt.subplots(4, 1, figsize=(8, 12), sharex=True)
+    axs[0].plot(cores, partitions, marker='o')
+    axs[0].set_ylabel('Partitions')
+    axs[0].set_title('Spark Partitions vs Cores')
+    axs[0].grid(True)
+
+    axs[1].plot(cores, driver_mem, marker='o', color='g')
+    axs[1].set_ylabel('Driver Memory (MB)')
+    axs[1].set_title('Driver Memory vs Cores')
+    axs[1].grid(True)
+
+    axs[2].plot(cores, executor_mem, marker='o', color='r')
+    axs[2].set_ylabel('Executor Memory (MB)')
+    axs[2].set_title('Executor Memory vs Cores')
+    axs[2].grid(True)
+
+    axs[3].plot(cores, max_result, marker='o', color='m')
+    axs[3].set_ylabel('Max Result Size (MB)')
+    axs[3].set_xlabel('Cores')
+    axs[3].set_title('Max Result Size vs Cores')
+    axs[3].grid(True)
+
+    plt.tight_layout()
+    if output_dir:
+        os.makedirs(output_dir, exist_ok=True)
+        plot_path = os.path.join(output_dir, 'benchmark_spark_config.png')
+        plt.savefig(plot_path, dpi=300, bbox_inches='tight', facecolor='white', edgecolor='none')
+        print(f"\nSpark config plots saved to: {plot_path}")
+    plt.close()
+
 def main():
     if len(sys.argv) < 3:
         print("Usage: python analyze_benchmark_results_performance.py <log_file_path> <benchmark_results_dir>")
@@ -123,11 +189,14 @@ def main():
     benchmark_dir = sys.argv[2]
     print(f"Analyzing benchmark results in: {benchmark_dir}")
     print(f"Using log file: {log_file}")
-    partitions = extract_partitions_from_log(log_file)
+    config = extract_spark_config_from_log(log_file)
     df = analyze_benchmark_directory(benchmark_dir)
-    if df is not None and partitions:
-        create_performance_partitions_plot(df, partitions, os.path.join(benchmark_dir, 'plots'))
-    else:
+    plots_dir = os.path.join(benchmark_dir, 'plots')
+    if df is not None:
+        create_performance_partitions_plot(df, plots_dir)
+    if config:
+        plot_spark_config(config, plots_dir)
+    if (df is None) and (not config):
         print("No valid data for plotting.")
 
 if __name__ == "__main__":

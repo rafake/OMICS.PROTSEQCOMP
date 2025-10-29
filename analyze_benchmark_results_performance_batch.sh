@@ -108,18 +108,25 @@ if [[ $ANALYSIS_RESULT -eq 0 ]]; then
     echo "Analysis completed successfully!"
     echo ""
     echo "Output files:"
-    PLOTS_FILE="$BENCHMARK_DIR/plots/benchmark_partitions_analysis.png"
-    if [[ -f "$PLOTS_FILE" ]]; then
-        echo "  - Performance plots: $PLOTS_FILE"
-        echo "    File size: $(du -h "$PLOTS_FILE" | cut -f1)"
+    PERF_PLOT="$BENCHMARK_DIR/plots/benchmark_performance.png"
+    SPARK_PLOT="$BENCHMARK_DIR/plots/benchmark_spark_config.png"
+    if [[ -f "$PERF_PLOT" ]]; then
+        echo "  - Performance plot: $PERF_PLOT"
+        echo "    File size: $(du -h "$PERF_PLOT" | cut -f1)"
     else
-        echo "  - Performance plots: Check job output above (plots may not have been saved)"
+        echo "  - Performance plot: Check job output above (plot may not have been saved)"
+    fi
+    if [[ -f "$SPARK_PLOT" ]]; then
+        echo "  - Spark config plots: $SPARK_PLOT"
+        echo "    File size: $(du -h "$SPARK_PLOT" | cut -f1)"
+    else
+        echo "  - Spark config plots: Check job output above (plot may not have been saved)"
     fi
     echo "  - Detailed summary: Check job output above"
     echo ""
     echo "To view the results:"
     echo "  - Summary tables are displayed in the job output above"
-    echo "  - Performance plots saved in benchmark results directory"
+    echo "  - Plots saved in benchmark results directory"
 else
     echo "Analysis failed with exit code: $ANALYSIS_RESULT"
     echo "Check the error messages above for details"
