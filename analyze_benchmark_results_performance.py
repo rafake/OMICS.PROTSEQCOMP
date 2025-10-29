@@ -210,7 +210,8 @@ def main():
         if df is not None:
             print(f"DataFrame shape: {df.shape}")
             print(df.head())
-            create_performance_partitions_plot(df, config if config else {}, plots_dir)
+            partitions = {k: v['partitions'] for k, v in config.items() if 'partitions' in v} if config else {}
+            create_performance_partitions_plot(df, partitions, plots_dir)
         else:
             print("No benchmark data found for plotting.")
         if config:
