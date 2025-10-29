@@ -171,8 +171,7 @@ else
     echo "Python location: $(which python)"
     echo "Conda info:"
     conda info
-    echo "Conda list:"
-    conda list
+    # Removed conda list to reduce debug output
     echo "Directory listing:"
     ls -l
     echo "Benchmark directory listing:"
