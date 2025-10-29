@@ -74,6 +74,26 @@ def analyze_benchmark_directory(directory_path):
     return df
 
 def extract_spark_config_from_log(log_path):
+def extract_failed_benchmarks_from_log(log_path):
+    """Parse the log file to find which method/core combinations failed."""
+    failed = set()
+    current_method = None
+    current_cores = None
+    with open(log_path, 'r') as f:
+        for line in f:
+            m = re.match(r"Benchmarking: (\w+) analysis", line)
+            if m:
+                current_method = m.group(1).lower()
+            c = re.match(r"Running (\w+) benchmark with (\d+) cores", line)
+            if c:
+                current_method = c.group(1).lower()
+                current_cores = int(c.group(2))
+            fail = re.match(r"✗ (\w+) benchmark with (\d+) cores failed!", line)
+            if fail:
+                method = fail.group(1).lower()
+                cores = int(fail.group(2))
+                failed.add((method, cores))
+    return failed
     """Extracts core count and Spark config (partitions, driver/executor memory, max result size) from the batch log file."""
     config = {}
     current_cores = None
@@ -98,11 +118,34 @@ def extract_spark_config_from_log(log_path):
                     config[current_cores]['max_result_size'] = int(mm.group(1))
     return config
 
+def extract_failed_benchmarks_from_log(log_path):
+    """Parse the log file to find which method/core combinations failed."""
+    failed = set()
+    current_method = None
+    current_cores = None
+    with open(log_path, 'r') as f:
+        for line in f:
+            m = re.match(r"Benchmarking: (\w+) analysis", line)
+            if m:
+                current_method = m.group(1).lower()
+            c = re.match(r"Running (\w+) benchmark with (\d+) cores", line)
+            if c:
+                current_method = c.group(1).lower()
+                current_cores = int(c.group(2))
+            fail = re.match(r"✗ (\w+) benchmark with (\d+) cores failed!", line)
+            if fail:
+                method = fail.group(1).lower()
+                cores = int(fail.group(2))
+                failed.add((method, cores))
+    return failed
+
 def create_performance_partitions_plot(df, partitions, output_dir=None):
     """Create line plots showing performance and partitions comparison."""
     if df is None or df.empty:
         print("No data to plot")
         return
+    # Accept failed_benchmarks as a global variable for now (set in main)
+    global failed_benchmarks
     plt.style.use('default')
     fig, ax1 = plt.subplots(figsize=(10, 6))
     color_map = {'jaccard': '#2E86C1', 'minhash': '#E74C3C'}
@@ -118,24 +161,18 @@ def create_performance_partitions_plot(df, partitions, output_dir=None):
         for _, row in method_data.iterrows():
             ax1.annotate(f'{row["real_time"]:.1f}s', (row['cores'], row['real_time']),
                          textcoords="offset points", xytext=(0,10), ha='center', fontsize=9, alpha=0.8)
+            # Mark failed points with a red 'x'
+            if (method, row['cores']) in failed_benchmarks:
+                ax1.plot(row['cores'], row['real_time'], marker='x', color='red', markersize=14, markeredgewidth=3, label=None)
     ax1.set_xlabel('CPU Cores', fontweight='bold')
     ax1.set_ylabel('Real Time (seconds)', fontweight='bold', color='black')
     ax1.grid(True, alpha=0.3)
     ax1.legend(loc='upper left')
-    # Plot partitions on secondary y-axis
-    ax2 = ax1.twinx()
-    core_vals = sorted(partitions.keys())
-    part_vals = [partitions[c] for c in core_vals]
-    ax2.plot(core_vals, part_vals, color='#27AE60', marker='^', linestyle='--', linewidth=2, markersize=8, label='Spark Partitions')
-    for x, y in zip(core_vals, part_vals):
-        ax2.annotate(f'{y}', (x, y), textcoords="offset points", xytext=(0,-15), ha='center', fontsize=9, color='#27AE60', alpha=0.8)
-    ax2.set_ylabel('Spark Partitions', fontweight='bold', color='#27AE60')
-    ax2.legend(loc='upper right')
-    plt.title('OMICS Protein Comparison - Performance & Spark Partitions', fontsize=15, fontweight='bold')
+    plt.title('OMICS Protein Comparison - Performance', fontsize=15, fontweight='bold')
     plt.tight_layout()
     if output_dir:
         os.makedirs(output_dir, exist_ok=True)
-        plot_path = os.path.join(output_dir, 'benchmark_partitions_analysis.png')
+        plot_path = os.path.join(output_dir, 'benchmark_performance.png')
         plt.savefig(plot_path, dpi=300, bbox_inches='tight', facecolor='white', edgecolor='none')
         print(f"\nPlot saved to: {plot_path}")
     plt.show()
@@ -207,13 +244,21 @@ def main():
         config = extract_spark_config_from_log(log_file)
         df = analyze_benchmark_directory(benchmark_dir)
         plots_dir = os.path.join(benchmark_dir, 'plots')
-        if df is not None:
-            print(f"DataFrame shape: {df.shape}")
-            print(df.head())
-            partitions = {k: v['partitions'] for k, v in config.items() if 'partitions' in v} if config else {}
-            create_performance_partitions_plot(df, partitions, plots_dir)
-        else:
-            print("No benchmark data found for plotting.")
+        global failed_benchmarks
+        failed_benchmarks = extract_failed_benchmarks_from_log(log_file)
+        try:
+            if df is not None:
+                print(f"DataFrame shape: {df.shape}")
+                print(df.head())
+                partitions = {k: v['partitions'] for k, v in config.items() if 'partitions' in v} if config else {}
+                create_performance_partitions_plot(df, partitions, plots_dir)
+            else:
+                print("No benchmark data found for plotting.")
+        except Exception as e:
+            print("Exception during performance plot:", e)
+            # Try to plot with failure annotation
+            if df is not None:
+                create_performance_partitions_plot(df, {}, plots_dir)
         if config:
             print(f"Spark config extracted for cores: {list(config.keys())}")
             plot_spark_config(config, plots_dir)
