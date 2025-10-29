@@ -74,7 +74,6 @@ def analyze_benchmark_directory(directory_path):
     return df
 
 def extract_spark_config_from_log(log_path):
-def extract_failed_benchmarks_from_log(log_path):
     """Parse the log file to find which method/core combinations failed."""
     failed = set()
     current_method = None
@@ -94,6 +93,8 @@ def extract_failed_benchmarks_from_log(log_path):
                 cores = int(fail.group(2))
                 failed.add((method, cores))
     return failed
+
+def extract_spark_config_from_log(log_path):
     """Extracts core count and Spark config (partitions, driver/executor memory, max result size) from the batch log file."""
     config = {}
     current_cores = None
@@ -117,6 +118,7 @@ def extract_failed_benchmarks_from_log(log_path):
                 if mm:
                     config[current_cores]['max_result_size'] = int(mm.group(1))
     return config
+
 
 def extract_failed_benchmarks_from_log(log_path):
     """Parse the log file to find which method/core combinations failed."""
