@@ -5,7 +5,7 @@
 #SBATCH -c 24
 #SBATCH --mem=110000
 #SBATCH --partition topola
-#SBATCH --time=0:01:00
+#SBATCH --time=1:00:00
 #SBATCH -A g100-2238
 #SBATCH --output=slurm/minhash-analysis-%j.out
 #SBATCH --error=slurm/minhash-analysis-%j.err
