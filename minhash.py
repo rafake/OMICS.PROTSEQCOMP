@@ -73,13 +73,19 @@ fish_sample  = fish_df.select("name", "sequence")
 # ------------------------------------------------------------
 # 4️⃣ Define UDF to extract 3-mers
 # ------------------------------------------------------------
-@pandas_udf(ArrayType(StringType()))
-def get_kmers_pd(seqs: pd.Series) -> pd.Series:
-    k = 3
-    return seqs.fillna("").apply(lambda s: [s[i:i+k] for i in range(len(s)-k+1)] if len(s) >= k else [])
 
-mouse_kmers = mouse_sample.withColumn("kmers", get_kmers_pd(col("sequence")))
-fish_kmers  = fish_sample.withColumn("kmers", get_kmers_pd(col("sequence")))
+from pyspark.sql.functions import udf
+
+def get_kmers_udf(seq):
+    k = 3
+    if seq is None:
+        return []
+    return [seq[i:i+k] for i in range(len(seq)-k+1)] if len(seq) >= k else []
+
+get_kmers = udf(get_kmers_udf, ArrayType(StringType()))
+
+mouse_kmers = mouse_sample.withColumn("kmers", get_kmers(col("sequence")))
+fish_kmers  = fish_sample.withColumn("kmers", get_kmers(col("sequence")))
 
 # ------------------------------------------------------------
 # 5️⃣ Convert k-mers to hashed feature vectors
