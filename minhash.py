@@ -30,7 +30,12 @@ conf = SparkConf()
 conf.set("spark.sql.shuffle.partitions", "12")  # Reduce shuffle partitions for less disk usage
 conf.set("spark.memory.fraction", "0.4")        # Use less memory for caching, more for execution
 conf.set("spark.memory.storageFraction", "0.2") # Use less for storage, more for execution
-conf.set("spark.executor.memoryOverhead", "1024") # Give more overhead for JVM
+# Option 2: 4 executors × 6 cores = 24 cores, 20g per executor, 2g overhead, 12g driver
+conf.set("spark.executor.instances", "4")
+conf.set("spark.executor.cores", "6")
+conf.set("spark.executor.memory", "20g")
+conf.set("spark.executor.memoryOverhead", "2g")
+conf.set("spark.driver.memory", "12g")
 # Avoid using disk for shuffle if possible (no spark.local.dir)
 spark = SparkSession.builder.appName("MouseFishMinHash").config(conf=conf).getOrCreate()
 
@@ -100,7 +105,7 @@ if length_filter_mode:
 similarities = model.approxSimilarityJoin(
     datasetA=mouse_mh,
     datasetB=fish_mh,
-    threshold=1.0,  # 1.0 = include all pairs
+    threshold=0.2,  # Jaccard similarity >= 0.8 (distance <= 0.2)
     distCol="dist"
 )
 
