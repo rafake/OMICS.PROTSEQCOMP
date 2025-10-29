@@ -130,7 +130,7 @@ for b in buckets:
         continue
     m_mh = model_mouse.transform(m_part)
     f_mh = model_mouse.transform(f_part)
-    part = model_mouse.approxSimilarityJoin(m_mh, f_mh, threshold=0.05, distCol="dist")
+    part = model_mouse.approxSimilarityJoin(m_mh, f_mh, threshold=0.1, distCol="dist")
     all_parts.append(part)
 
 if all_parts:
