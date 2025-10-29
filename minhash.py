@@ -1,6 +1,9 @@
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import udf, col, rand, explode, collect_list, length, greatest, abs
 from pyspark.sql.types import ArrayType, StringType
+from pyspark.sql.functions import pandas_udf
+from pyspark.sql.functions import floor
+import pandas as pd
 from pyspark.ml.feature import HashingTF, MinHashLSH
 import os
 import shutil
@@ -9,7 +12,7 @@ from datetime import datetime
 
 # ----------------------------------------------------------
 # 0️⃣ Check for no-save parameter and working directory
-# ----------------------------------------------------------
+
 # Check if --no-save parameter is passed
 no_save_mode = "--no-save" in sys.argv or "--dry-run" in sys.argv
 if no_save_mode:
@@ -27,16 +30,20 @@ print("Current working directory:", os.getcwd())
 # ------------------------------------------------------------
 from pyspark import SparkConf
 conf = SparkConf()
-conf.set("spark.sql.shuffle.partitions", "12")  # Reduce shuffle partitions for less disk usage
-conf.set("spark.memory.fraction", "0.4")        # Use less memory for caching, more for execution
-conf.set("spark.memory.storageFraction", "0.2") # Use less for storage, more for execution
-# Option 2: 4 executors × 6 cores = 24 cores, 20g per executor, 2g overhead, 12g driver
+conf.set("spark.sql.shuffle.partitions", "96")
+conf.set("spark.sql.adaptive.enabled", "true")
+conf.set("spark.sql.adaptive.coalescePartitions.enabled", "true")
+conf.set("spark.sql.adaptive.shuffle.targetPostShuffleInputSize", "64MB")
+conf.set("spark.sql.execution.arrow.pyspark.enabled", "true")
+
+conf.set("spark.memory.fraction", "0.5")
+conf.set("spark.memory.storageFraction", "0.2")
+
 conf.set("spark.executor.instances", "4")
 conf.set("spark.executor.cores", "6")
 conf.set("spark.executor.memory", "20g")
-conf.set("spark.executor.memoryOverhead", "2g")
+conf.set("spark.executor.memoryOverhead", "4g")
 conf.set("spark.driver.memory", "12g")
-# Avoid using disk for shuffle if possible (no spark.local.dir)
 spark = SparkSession.builder.appName("MouseFishMinHash").config(conf=conf).getOrCreate()
 
 # ------------------------------------------------------------
@@ -65,49 +72,71 @@ fish_sample  = fish_df.select("name", "sequence")
 # ------------------------------------------------------------
 # 4️⃣ Define UDF to extract 3-mers
 # ------------------------------------------------------------
-def get_kmers(seq, k=3):
-    if seq is None or len(seq) < k:
-        return []
-    return [seq[i:i+k] for i in range(len(seq) - k + 1)]
+@pandas_udf(ArrayType(StringType()))
+def get_kmers_pd(seqs: pd.Series, k: int = 3) -> pd.Series:
+    return seqs.fillna("").apply(lambda s: [s[i:i+k] for i in range(len(s)-k+1)] if len(s) >= k else [])
 
-get_kmers_udf = udf(get_kmers, ArrayType(StringType()))
-
-mouse_kmers = mouse_sample.withColumn("kmers", get_kmers_udf(col("sequence")))
-fish_kmers  = fish_sample.withColumn("kmers", get_kmers_udf(col("sequence")))
+mouse_kmers = mouse_sample.withColumn("kmers", get_kmers_pd(col("sequence")))
+fish_kmers  = fish_sample.withColumn("kmers", get_kmers_pd(col("sequence")))
 
 # ------------------------------------------------------------
 # 5️⃣ Convert k-mers to hashed feature vectors
 # ------------------------------------------------------------
-hashingTF = HashingTF(inputCol="kmers", outputCol="features", numFeatures=2**16)
 
-mouse_hashed = hashingTF.transform(mouse_kmers)
-fish_hashed  = hashingTF.transform(fish_kmers)
+hashingTF = HashingTF(inputCol="kmers", outputCol="features", numFeatures=2**14)  # 16,384
+
+mouse_hashed = hashingTF.transform(mouse_kmers).select("name", "sequence", "features")
+fish_hashed  = hashingTF.transform(fish_kmers).select("name", "sequence", "features")
+
+# Add sequence length and bucket columns for bucketing
+def add_len_bucket(df, bucket=100):  # 100 aa bucket works well
+    return (df.withColumn("sequence_length", length(col("sequence")))
+              .withColumn("len_bucket", floor(col("sequence_length")/bucket)))
+
+mouse_h = add_len_bucket(mouse_hashed)
+fish_h  = add_len_bucket(fish_hashed)
 
 # ------------------------------------------------------------
 # 6️⃣ Build MinHashLSH model
 # ------------------------------------------------------------
-mh = MinHashLSH(inputCol="features", outputCol="hashes", numHashTables=8)
-model = mh.fit(mouse_hashed.union(fish_hashed))
 
-# Transform both datasets to compute their MinHash signatures
-mouse_mh = model.transform(mouse_hashed)
-fish_mh  = model.transform(fish_hashed)
 
-# For length filtering, add sequence length columns before MinHash
-if length_filter_mode:
-    mouse_mh = mouse_mh.withColumn("sequence_length", length(col("sequence")))
-    fish_mh = fish_mh.withColumn("sequence_length", length(col("sequence")))
 
-# ------------------------------------------------------------
-# 7️⃣ Compute pairwise MinHash similarities
-# ------------------------------------------------------------
-# Approximate similarity join: finds pairs above a Jaccard threshold
-similarities = model.approxSimilarityJoin(
-    datasetA=mouse_mh,
-    datasetB=fish_mh,
-    threshold=0.2,  # Jaccard similarity >= 0.8 (distance <= 0.2)
-    distCol="dist"
-)
+# --- per-bucket LSH joins (keep this) ---
+mh = MinHashLSH(inputCol="features", outputCol="hashes", numHashTables=12)  # was 8
+model_mouse = mh.fit(mouse_hashed)
+
+bucket_rows = (mouse_h.select("len_bucket").distinct()
+               .intersect(fish_h.select("len_bucket").distinct())
+               .collect())
+buckets = [r["len_bucket"] for r in bucket_rows]
+
+def is_empty(df):
+    return df.selectExpr("1").limit(1).count() == 0
+
+all_parts = []
+for b in buckets:
+    m_part = mouse_h.filter(col("len_bucket") == b).repartition(96)
+    f_part = fish_h.filter(col("len_bucket") == b).repartition(96)
+    if is_empty(m_part) or is_empty(f_part):
+        continue
+    m_mh = model_mouse.transform(m_part)
+    f_mh = model_mouse.transform(f_part)
+    part = model_mouse.approxSimilarityJoin(m_mh, f_mh, threshold=0.05, distCol="dist")
+    all_parts.append(part)
+
+if all_parts:
+    similarities = all_parts[0]
+    for part in all_parts[1:]:
+        similarities = similarities.unionByName(part)
+else:
+    empty_schema = model_mouse.approxSimilarityJoin(
+        model_mouse.transform(mouse_h.limit(0)),
+        model_mouse.transform(fish_h.limit(0)),
+        threshold=0.05, distCol="dist").schema
+    similarities = spark.createDataFrame([], empty_schema)
+
+# (global join removed; only per-bucket similarities are used)
 
 # ------------------------------------------------------------
 # 8️⃣ Process results
@@ -168,27 +197,29 @@ if not no_save_mode:
     input_data_dir = f"{comparison_output_dir}/input_data"
     os.makedirs(input_data_dir, exist_ok=True)
 
-    # Copy mouse sample files (only if not already present)
+    # Copy mouse sample files (only if not already present and local)
     mouse_source = mouse_path
     mouse_dest = f"{input_data_dir}/mouse_sample"
+    def is_local(p):
+        return p.startswith("/") and os.path.exists(p)
     if not os.path.exists(mouse_dest):
-        if os.path.exists(mouse_source):
+        if is_local(mouse_source):
             shutil.copytree(mouse_source, mouse_dest, dirs_exist_ok=True)
             print(f"Mouse sample data copied to: {mouse_dest}")
         else:
-            print(f"Warning: Mouse source directory not found: {mouse_source}")
+            print(f"Warning: Mouse source directory not found or not local: {mouse_source}")
     else:
         print(f"Mouse sample data already exists at: {mouse_dest}")
 
-    # Copy fish sample files (only if not already present)
+    # Copy fish sample files (only if not already present and local)
     fish_source = fish_path
     fish_dest = f"{input_data_dir}/fish_sample"
     if not os.path.exists(fish_dest):
-        if os.path.exists(fish_source):
+        if is_local(fish_source):
             shutil.copytree(fish_source, fish_dest, dirs_exist_ok=True)
             print(f"Fish sample data copied to: {fish_dest}")
         else:
-            print(f"Warning: Fish source directory not found: {fish_source}")
+            print(f"Warning: Fish source directory not found or not local: {fish_source}")
     else:
         print(f"Fish sample data already exists at: {fish_dest}")
 
