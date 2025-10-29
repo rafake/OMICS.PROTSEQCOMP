@@ -73,7 +73,8 @@ fish_sample  = fish_df.select("name", "sequence")
 # 4️⃣ Define UDF to extract 3-mers
 # ------------------------------------------------------------
 @pandas_udf(ArrayType(StringType()))
-def get_kmers_pd(seqs: pd.Series, k: int = 3) -> pd.Series:
+def get_kmers_pd(seqs: pd.Series) -> pd.Series:
+    k = 3
     return seqs.fillna("").apply(lambda s: [s[i:i+k] for i in range(len(s)-k+1)] if len(s) >= k else [])
 
 mouse_kmers = mouse_sample.withColumn("kmers", get_kmers_pd(col("sequence")))
