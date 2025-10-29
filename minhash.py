@@ -44,7 +44,7 @@ conf.set("spark.executor.cores", "6")
 conf.set("spark.executor.memory", "20g")
 conf.set("spark.executor.memoryOverhead", "4g")
 conf.set("spark.driver.memory", "12g")
-spark = SparkSession.builder.appName("MouseFishMinHash").config(conf=conf).getOrCreate()
+spark = SparkSession.builder.appName("MinHash Protein Sequence Comparison").config(conf=conf).getOrCreate()
 
 # ------------------------------------------------------------
 # 2️⃣ Load ADAM data from sample directories
