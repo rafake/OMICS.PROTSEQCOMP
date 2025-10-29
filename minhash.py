@@ -25,7 +25,14 @@ print("Current working directory:", os.getcwd())
 # ------------------------------------------------------------
 # 1️⃣ Start Spark session
 # ------------------------------------------------------------
-spark = SparkSession.builder.appName("MouseFishMinHash").getOrCreate()
+from pyspark import SparkConf
+conf = SparkConf()
+conf.set("spark.sql.shuffle.partitions", "12")  # Reduce shuffle partitions for less disk usage
+conf.set("spark.memory.fraction", "0.4")        # Use less memory for caching, more for execution
+conf.set("spark.memory.storageFraction", "0.2") # Use less for storage, more for execution
+conf.set("spark.executor.memoryOverhead", "1024") # Give more overhead for JVM
+# Avoid using disk for shuffle if possible (no spark.local.dir)
+spark = SparkSession.builder.appName("MouseFishMinHash").config(conf=conf).getOrCreate()
 
 # ------------------------------------------------------------
 # 2️⃣ Load ADAM data from sample directories
