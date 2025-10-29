@@ -181,23 +181,52 @@ def plot_spark_config(config, output_dir=None):
         print(f"\nSpark config plots saved to: {plot_path}")
     plt.close()
 
+import traceback
+
+def debug_list_dir(path, label=None):
+    try:
+        print(f"\nDirectory listing for {label or path}:")
+        for f in os.listdir(path):
+            print(f"  {f}")
+    except Exception as e:
+        print(f"Could not list directory {path}: {e}")
+
 def main():
-    if len(sys.argv) < 3:
-        print("Usage: python analyze_benchmark_results_performance.py <log_file_path> <benchmark_results_dir>")
+    try:
+        if len(sys.argv) < 3:
+            print("Usage: python analyze_benchmark_results_performance.py <log_file_path> <benchmark_results_dir>")
+            sys.exit(1)
+        log_file = sys.argv[1]
+        benchmark_dir = sys.argv[2]
+        print(f"Analyzing benchmark results in: {benchmark_dir}")
+        print(f"Using log file: {log_file}")
+        print(f"Python version: {sys.version}")
+        print(f"Current working directory: {os.getcwd()}")
+        debug_list_dir('.', label='current directory')
+        debug_list_dir(benchmark_dir, label='benchmark_dir')
+        config = extract_spark_config_from_log(log_file)
+        df = analyze_benchmark_directory(benchmark_dir)
+        plots_dir = os.path.join(benchmark_dir, 'plots')
+        if df is not None:
+            print(f"DataFrame shape: {df.shape}")
+            print(df.head())
+            create_performance_partitions_plot(df, config if config else {}, plots_dir)
+        else:
+            print("No benchmark data found for plotting.")
+        if config:
+            print(f"Spark config extracted for cores: {list(config.keys())}")
+            plot_spark_config(config, plots_dir)
+        else:
+            print("No Spark config data found for plotting.")
+        if (df is None) and (not config):
+            print("No valid data for plotting.")
+        debug_list_dir(plots_dir, label='plots_dir')
+    except Exception as e:
+        print("\n--- Exception occurred in analysis script ---")
+        print(f"Error: {e}")
+        traceback.print_exc()
+        print("--- End exception ---\n")
         sys.exit(1)
-    log_file = sys.argv[1]
-    benchmark_dir = sys.argv[2]
-    print(f"Analyzing benchmark results in: {benchmark_dir}")
-    print(f"Using log file: {log_file}")
-    config = extract_spark_config_from_log(log_file)
-    df = analyze_benchmark_directory(benchmark_dir)
-    plots_dir = os.path.join(benchmark_dir, 'plots')
-    if df is not None:
-        create_performance_partitions_plot(df, plots_dir)
-    if config:
-        plot_spark_config(config, plots_dir)
-    if (df is None) and (not config):
-        print("No valid data for plotting.")
 
 if __name__ == "__main__":
     main()

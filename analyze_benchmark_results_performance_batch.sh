@@ -10,11 +10,19 @@
 #SBATCH --output=benchmark-performance-analysis-%j.out
 #SBATCH --error=benchmark-performance-analysis-%j.err
 
+
 # Load Anaconda module for Python environment with matplotlib
 module load apps/anaconda/2024-10
 
-# Verify Python and required packages are available
+# Print environment and Python info for debugging
+echo "PATH: $PATH"
+echo "PYTHONPATH: $PYTHONPATH"
+which python
 python --version
+conda info
+conda list
+
+# Verify Python and required packages are available
 python -c "import matplotlib, pandas; print('matplotlib and pandas are available')" 2>/dev/null || {
     echo "Warning: matplotlib or pandas may not be available"
     echo "Attempting to install with conda..."
@@ -94,10 +102,38 @@ mkdir -p plots
 echo "Running benchmark performance analysis..."
 echo "============================================================================"
 
-# Run the Python analysis script using Anaconda Python
-python analyze_benchmark_results_performance.py "$LOG_FILE_PATH" "$BENCHMARK_DIR"
 
+# Print directory and file state before running analysis
+echo "Current directory: $(pwd)"
+echo "Directory listing before analysis:"
+ls -l
+echo "Benchmark directory listing:"
+ls -l "$BENCHMARK_DIR"
+
+# Run the Python analysis script using Anaconda Python, capturing stderr
+echo "Running: python analyze_benchmark_results_performance.py $LOG_FILE_PATH $BENCHMARK_DIR"
+python analyze_benchmark_results_performance.py "$LOG_FILE_PATH" "$BENCHMARK_DIR" 2>analysis_script_stderr.log
 ANALYSIS_RESULT=$?
+
+# Print directory and file state after running analysis
+echo "Directory listing after analysis:"
+ls -l
+echo "Benchmark directory listing after analysis:"
+ls -l "$BENCHMARK_DIR"
+if [[ -d "$BENCHMARK_DIR/plots" ]]; then
+    echo "Plots directory listing:"
+    ls -l "$BENCHMARK_DIR/plots"
+else
+    echo "No plots directory found in benchmark directory."
+fi
+
+# Print captured stderr from analysis script if any
+if [[ -s analysis_script_stderr.log ]]; then
+    echo "Captured stderr from analysis script:"
+    cat analysis_script_stderr.log
+else
+    echo "No stderr output from analysis script."
+fi
 
 echo ""
 echo "============================================================================"
@@ -130,6 +166,24 @@ if [[ $ANALYSIS_RESULT -eq 0 ]]; then
 else
     echo "Analysis failed with exit code: $ANALYSIS_RESULT"
     echo "Check the error messages above for details"
+    echo "--- Debugging info ---"
+    echo "Python version: $(python --version 2>&1)"
+    echo "Python location: $(which python)"
+    echo "Conda info:"
+    conda info
+    echo "Conda list:"
+    conda list
+    echo "Directory listing:"
+    ls -l
+    echo "Benchmark directory listing:"
+    ls -l "$BENCHMARK_DIR"
+    if [[ -d "$BENCHMARK_DIR/plots" ]]; then
+        echo "Plots directory listing:"
+        ls -l "$BENCHMARK_DIR/plots"
+    else
+        echo "No plots directory found in benchmark directory."
+    fi
+    echo "--- End debugging info ---"
 fi
 
 # Move SLURM output files to slurm directory
