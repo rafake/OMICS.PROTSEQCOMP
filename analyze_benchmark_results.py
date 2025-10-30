@@ -48,6 +48,7 @@ import glob
 import datetime
 import matplotlib.pyplot as plt
 import pandas as pd
+import re
 import openpyxl
 from pathlib import Path
 
@@ -307,6 +308,81 @@ def create_summary_table(df, output_dir=None):
         tee_print(f"Błąd podczas zapisu do Excela: {e}")
 
 def main():
+    def parse_multi_benchmark_files(input_dir):
+        """
+        Parse OMICS-multi-benchmark-p-* files for Spark config and run info (format: Benchmarking: ... + Spark configuration for X cores: ...)
+        Returns: DataFrame with columns: method, cores, partitions, driver_memory, executor_memory, max_result_size
+        """
+        pattern = os.path.join(input_dir, 'OMICS-multi-benchmark-p-*')
+        files = glob.glob(pattern)
+        rows = []
+        for file in files:
+            with open(file, 'r', encoding='utf-8') as f:
+                content = f.read()
+            # Split by Spark config blocks
+            spark_blocks = re.split(r'={10,}', content)
+            # Track the most recent method seen before each block
+            method = None
+            for block in spark_blocks:
+                # Update method if a new 'Benchmarking:' line is found
+                method_match = re.search(r'Benchmarking:\s*(\w+)', block, re.IGNORECASE)
+                if method_match:
+                    method = method_match.group(1).lower()
+                # Look for 'Spark configuration for X cores:'
+                config_match = re.search(r'Spark configuration for (\d+) cores:', block)
+                if config_match and method:
+                    cores = int(config_match.group(1))
+                    part_match = re.search(r'Partitions:\s*(\d+)', block)
+                    partitions = int(part_match.group(1)) if part_match else None
+                    driver_match = re.search(r'Driver memory:\s*([\w\.]+)', block)
+                    driver_memory = driver_match.group(1) if driver_match else None
+                    exec_match = re.search(r'Executor memory:\s*([\w\.]+)', block)
+                    executor_memory = exec_match.group(1) if exec_match else None
+                    maxres_match = re.search(r'Max result size:\s*([\w\.]+)', block)
+                    max_result_size = maxres_match.group(1) if maxres_match else None
+                    rows.append({
+                        'Metoda': method,
+                        'Rdzenie CPU': cores,
+                        'Partycje': partitions,
+                        'Pamięć drivera': driver_memory,
+                        'Pamięć executora': executor_memory,
+                        'Max rozmiar wyniku': max_result_size
+                    })
+        if rows:
+            df = pd.DataFrame(rows)
+            df = df.sort_values(['Metoda', 'Rdzenie CPU'])
+            return df
+        return None
+
+    def plot_spark_config_summary(df, output_dir):
+        """
+        Plot Spark config values vs. core count for jaccard and minhash.
+        """
+        if df is None or df.empty:
+            tee_print("Brak danych Spark config do wykresu.")
+            return
+        import matplotlib.pyplot as plt
+        # Only plot numeric config (partitions), memory as text annotations
+        fig, ax = plt.subplots(figsize=(10,6))
+        for method in df['Metoda'].unique():
+            mdf = df[df['Metoda'] == method]
+            ax.plot(mdf['Rdzenie CPU'], mdf['Partycje'], marker='o', label=f"{method.capitalize()} - Partycje")
+            # Annotate memory configs
+            for _, row in mdf.iterrows():
+                label = f"D:{row['Pamięć drivera']}\nE:{row['Pamięć executora']}\nMax:{row['Max rozmiar wyniku']}"
+                ax.annotate(label, (row['Rdzenie CPU'], row['Partycje']), textcoords="offset points", xytext=(0,10), ha='center', fontsize=8, alpha=0.7)
+        ax.set_xlabel('Rdzenie CPU', fontweight='bold')
+        ax.set_ylabel('Liczba partycji', fontweight='bold')
+        ax.set_title('Spark config: Partycje vs. Rdzenie CPU', fontweight='bold')
+        ax.grid(True, alpha=0.3)
+        ax.legend()
+        plt.tight_layout()
+        if output_dir:
+            os.makedirs(output_dir, exist_ok=True)
+            plot_path = os.path.join(output_dir, 'benchmark_spark_config_summary.png')
+            plt.savefig(plot_path, dpi=300, bbox_inches='tight', facecolor='white', edgecolor='none')
+            tee_print(f"Zapisano wykres Spark config: {plot_path}")
+        plt.close()
     """Main function to run the benchmark analysis."""
     # Parse up to two optional arguments: input_dir and output_dir (order-insensitive)
     input_dir = None
@@ -363,6 +439,7 @@ def main():
         df = analyze_benchmark_directory(input_dir)
 
 
+
         if df is not None:
             # Create summary table and Excel output (pass output_dir)
             create_summary_table(df, output_dir)
@@ -371,6 +448,13 @@ def main():
             if output_dir is None:
                 output_dir = os.path.join(input_dir, 'plots')
             create_performance_plots(df, output_dir)
+
+            # Parse and plot Spark config summary from OMICS-multi-benchmark-p-* files
+            spark_df = parse_multi_benchmark_files(input_dir)
+            if spark_df is not None and not spark_df.empty:
+                tee_print("\nPODSUMOWANIE KONFIGURACJI SPARK:")
+                tee_print(spark_df.to_string(index=False))
+            plot_spark_config_summary(spark_df, output_dir)
 
         tee_print("\nAnalysis complete!")
     finally:
