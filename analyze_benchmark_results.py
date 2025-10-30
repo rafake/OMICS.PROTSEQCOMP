@@ -48,6 +48,7 @@ import glob
 import datetime
 import matplotlib.pyplot as plt
 import pandas as pd
+import openpyxl
 from pathlib import Path
 
 def extract_benchmark_data(file_path):
@@ -229,7 +230,7 @@ def create_performance_plots(df, output_dir=None):
     
     plt.show()
 
-def create_summary_table(df):
+def create_summary_table(df, output_dir=None):
     """
     Create a summary table of the benchmark results.
     
@@ -243,29 +244,39 @@ def create_summary_table(df):
     tee_print("BENCHMARK RESULTS SUMMARY")
     tee_print("="*80)
 
-    # Summary statistics
+    # Prepare summary statistics for Excel
+    summary_rows = []
     for method in df['method'].unique():
         method_data = df[df['method'] == method]
-        tee_print(f"\n{method.upper()} METHOD:")
-        tee_print("-" * 40)
-
         for _, row in method_data.sort_values('cores').iterrows():
             efficiency = (row['user_time'] + row['sys_time']) / row['real_time'] * 100
+            summary_rows.append({
+                'Metoda': method.upper(),
+                'Rdzenie CPU': row['cores'],
+                'Czas rzeczywisty (s)': row['real_time'],
+                'Czas użytkownika (s)': row['user_time'],
+                'Czas systemowy (s)': row['sys_time'],
+                'Wydajność CPU (%)': efficiency
+            })
             tee_print(f"  {row['cores']:2d} cores: Real={row['real_time']:6.1f}s  "
                       f"User={row['user_time']:6.1f}s  Sys={row['sys_time']:5.1f}s  "
                       f"CPU Efficiency={efficiency:5.1f}%")
 
     # Performance comparison
-    tee_print(f"\nPERFORMACE COMPARISON (Real Time):")
+    tee_print(f"\nPORÓWNANIE WYDAJNOŚCI (Czas rzeczywisty):")
     tee_print("-" * 40)
 
     pivot_df = df.pivot(index='cores', columns='method', values='real_time')
+    # Polish headers for pivot table
+    pivot_df.index.name = 'Rdzenie CPU'
+    pivot_df.columns = [m.capitalize() for m in pivot_df.columns]
     tee_print(pivot_df.to_string(float_format='%.1f'))
 
     # Calculate speedup
+    speedup_rows = []
     if len(df['method'].unique()) == 2:
         methods = list(df['method'].unique())
-        tee_print(f"\nSPEEDUP ANALYSIS:")
+        tee_print(f"\nANALIZA PRZYSPIESZENIA:")
         tee_print("-" * 40)
 
         for cores in sorted(df['cores'].unique()):
@@ -277,6 +288,23 @@ def create_summary_table(df):
                     faster_method = methods[0] if ratio < 1 else methods[1]
                     speedup = max(ratio, 1/ratio)
                     tee_print(f"  {cores:2d} cores: {faster_method.capitalize()} is {speedup:.2f}x faster")
+                    speedup_rows.append({
+                        'Rdzenie CPU': cores,
+                        'Szybsza metoda': faster_method.capitalize(),
+                        'Przyspieszenie': f"{speedup:.2f}x"
+                    })
+
+    # Write to Excel in output_dir
+    try:
+        excel_path = os.path.join(output_dir if output_dir else '.', 'benchmark_results_summary.xlsx')
+        with pd.ExcelWriter(excel_path, engine='openpyxl') as writer:
+            pd.DataFrame(summary_rows).to_excel(writer, sheet_name='Podsumowanie', index=False)
+            pivot_df.to_excel(writer, sheet_name='Porównanie', index=True)
+            if speedup_rows:
+                pd.DataFrame(speedup_rows).to_excel(writer, sheet_name='Przyspieszenie', index=False)
+        tee_print(f"\nZapisano podsumowanie do pliku: {excel_path}")
+    except Exception as e:
+        tee_print(f"Błąd podczas zapisu do Excela: {e}")
 
 def main():
     """Main function to run the benchmark analysis."""
@@ -334,9 +362,10 @@ def main():
         # Analyze the benchmark files
         df = analyze_benchmark_directory(input_dir)
 
+
         if df is not None:
-            # Create summary table
-            create_summary_table(df)
+            # Create summary table and Excel output (pass output_dir)
+            create_summary_table(df, output_dir)
 
             # Create performance plots in the specified output directory (or default)
             if output_dir is None:
