@@ -6,7 +6,11 @@ This script analyzes benchmark output files from the OMICS protein comparison pr
 extracts timing information, and creates line plots comparing performance across
 different CPU core configurations.
 
-Usage: python analyze_benchmark_results.py [directory_path]
+Usage: python analyze_benchmark_results.py [input_dir] [output_dir]
+
+Arguments:
+    input_dir   (optional) Directory containing benchmark files. If omitted, auto-detect.
+    output_dir  (optional) Directory to save plots and summary. If omitted, defaults to <input_dir>/plots or auto-detected/plots.
 """
 
 import os
@@ -248,57 +252,64 @@ def create_summary_table(df):
 
 def main():
     """Main function to run the benchmark analysis."""
-    # Get directory path from command line argument or use current directory
-    if len(sys.argv) > 1:
-        directory_path = sys.argv[1]
-    else:
-        # Try to find benchmark results directory automatically
+    # Parse up to two optional arguments: input_dir and output_dir (order-insensitive)
+    input_dir = None
+    output_dir = None
+    args = sys.argv[1:]
+    for arg in args:
+        if os.path.isdir(arg):
+            if input_dir is None:
+                input_dir = arg
+            elif output_dir is None:
+                output_dir = arg
+        else:
+            # If not a directory, treat as output_dir if not set
+            if output_dir is None:
+                output_dir = arg
+
+    # Auto-detect input_dir if not provided
+    if input_dir is None:
         possible_dirs = [
             'output/benchmark_results',
             '.',
             'benchmark_results'
         ]
-        
-        directory_path = None
         for dir_path in possible_dirs:
             if os.path.exists(dir_path):
-                # Check if it contains benchmark files
                 pattern = os.path.join(dir_path, "*_benchmark_*cores.out")
                 if glob.glob(pattern):
-                    directory_path = dir_path
+                    input_dir = dir_path
                     break
-                # Check subdirectories for timestamp-based directories
-                subdirs = [d for d in os.listdir(dir_path) 
-                          if os.path.isdir(os.path.join(dir_path, d)) and 
+                subdirs = [d for d in os.listdir(dir_path)
+                          if os.path.isdir(os.path.join(dir_path, d)) and
                           re.match(r'\d{8}_\d{6}', d)]
                 if subdirs:
-                    # Use the latest timestamp directory
                     latest_dir = os.path.join(dir_path, sorted(subdirs)[-1])
                     pattern = os.path.join(latest_dir, "*_benchmark_*cores.out")
                     if glob.glob(pattern):
-                        directory_path = latest_dir
+                        input_dir = latest_dir
                         break
-        
-        if directory_path is None:
+        if input_dir is None:
             print("Error: No benchmark files found.")
-            print("Usage: python analyze_benchmark_results.py [directory_path]")
+            print("Usage: python analyze_benchmark_results.py [input_dir] [output_dir]")
             print("\nLooking for files matching pattern: *_benchmark_*cores.out")
             sys.exit(1)
-    
-    print(f"Analyzing benchmark results in: {directory_path}")
+
+    print(f"Analyzing benchmark results in: {input_dir}")
     print("="*60)
-    
+
     # Analyze the benchmark files
-    df = analyze_benchmark_directory(directory_path)
-    
+    df = analyze_benchmark_directory(input_dir)
+
     if df is not None:
         # Create summary table
         create_summary_table(df)
-        
-        # Create performance plots in the same directory as benchmark files
-        output_dir = os.path.join(directory_path, 'plots')
+
+        # Create performance plots in the specified output directory (or default)
+        if output_dir is None:
+            output_dir = os.path.join(input_dir, 'plots')
         create_performance_plots(df, output_dir)
-    
+
     print("\nAnalysis complete!")
 
 if __name__ == "__main__":

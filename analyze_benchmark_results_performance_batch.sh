@@ -39,10 +39,19 @@ echo "Using Anaconda Python environment"
 echo "Start time: $(date)"
 echo ""
 echo "Usage options:"
-echo "  sbatch analyze_benchmark_results_performance_batch.sh <log_file_path> <benchmark_results_dir>"
+echo "  sbatch analyze_benchmark_results_performance_batch.sh <log_file_path> <benchmark_results_dir> <output_dir>"
 
 echo "  <log_file_path>         Path to the batch log file with Spark configuration info (required)"
 echo "  <benchmark_results_dir> Path to the benchmark results directory (optional, will auto-detect if not provided)"
+echo "  <output_dir>            Output directory for plots and summary (optional, default: <benchmark_results_dir>/plots)"
+# Check for optional output directory parameter
+if [[ -n "$3" ]]; then
+    OUTPUT_DIR="$3"
+    echo "Using specified output directory: $OUTPUT_DIR"
+else
+    OUTPUT_DIR="$BENCHMARK_DIR/plots"
+    echo "No output directory specified, using default: $OUTPUT_DIR"
+fi
 
 # Check if analysis script exists
 if [[ ! -f "analyze_benchmark_results_performance.py" ]]; then
@@ -111,8 +120,8 @@ echo "Benchmark directory listing:"
 ls -l "$BENCHMARK_DIR"
 
 # Run the Python analysis script using Anaconda Python, capturing stderr
-echo "Running: python analyze_benchmark_results_performance.py $LOG_FILE_PATH $BENCHMARK_DIR"
-python analyze_benchmark_results_performance.py "$LOG_FILE_PATH" "$BENCHMARK_DIR" 2>analysis_script_stderr.log
+echo "Running: python analyze_benchmark_results_performance.py $LOG_FILE_PATH $BENCHMARK_DIR $OUTPUT_DIR"
+python analyze_benchmark_results_performance.py "$LOG_FILE_PATH" "$BENCHMARK_DIR" "$OUTPUT_DIR" 2>analysis_script_stderr.log
 ANALYSIS_RESULT=$?
 
 # Print directory and file state after running analysis
