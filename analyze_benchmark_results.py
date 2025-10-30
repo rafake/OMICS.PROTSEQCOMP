@@ -1,3 +1,31 @@
+import builtins
+
+# --- Logging setup ---
+class TeeLogger:
+    def __init__(self, log_path):
+        self.log_path = log_path
+        self.log_file = open(log_path, 'w', encoding='utf-8')
+        self._orig_print = builtins.print
+
+    def print(self, *args, **kwargs):
+        sep = kwargs.get('sep', ' ')
+        end = kwargs.get('end', '\n')
+        msg = sep.join(str(a) for a in args) + end
+        self.log_file.write(msg)
+        self.log_file.flush()
+        self._orig_print(*args, **kwargs)
+
+    def close(self):
+        self.log_file.close()
+
+# Will be set in main()
+tee_logger = None
+
+def tee_print(*args, **kwargs):
+    if tee_logger is not None:
+        tee_logger.print(*args, **kwargs)
+    else:
+        print(*args, **kwargs)
 #!/usr/bin/env python3
 """
 Benchmark Results Analysis Script
@@ -35,32 +63,32 @@ def extract_benchmark_data(file_path):
     try:
         with open(file_path, 'r') as f:
             content = f.read()
-        
+
         # Extract method and core count from filename
         filename = os.path.basename(file_path)
         # Pattern: method_benchmark_Xcores.out
         match = re.match(r'(\w+)_benchmark_(\d+)cores\.out', filename)
         if not match:
-            print(f"Warning: Could not parse filename format: {filename}")
+            tee_print(f"Warning: Could not parse filename format: {filename}")
             return None
-            
+
         method = match.group(1)
         cores = int(match.group(2))
-        
+
         # Extract timing information (real, user, sys)
         real_match = re.search(r'real\s+(\d+)m([\d.]+)s', content)
         user_match = re.search(r'user\s+(\d+)m([\d.]+)s', content)
         sys_match = re.search(r'sys\s+(\d+)m([\d.]+)s', content)
-        
+
         if not all([real_match, user_match, sys_match]):
-            print(f"Warning: Could not extract timing data from {filename}")
+            tee_print(f"Warning: Could not extract timing data from {filename}")
             return None
-        
+
         # Convert time to seconds
         real_time = int(real_match.group(1)) * 60 + float(real_match.group(2))
         user_time = int(user_match.group(1)) * 60 + float(user_match.group(2))
         sys_time = int(sys_match.group(1)) * 60 + float(sys_match.group(2))
-        
+
         return {
             'method': method,
             'cores': cores,
@@ -69,9 +97,9 @@ def extract_benchmark_data(file_path):
             'sys_time': sys_time,
             'filename': filename
         }
-        
+
     except Exception as e:
-        print(f"Error processing {file_path}: {e}")
+        tee_print(f"Error processing {file_path}: {e}")
         return None
 
 def analyze_benchmark_directory(directory_path):
@@ -85,40 +113,40 @@ def analyze_benchmark_directory(directory_path):
         pd.DataFrame: DataFrame with benchmark results
     """
     if not os.path.exists(directory_path):
-        print(f"Error: Directory {directory_path} does not exist")
+        tee_print(f"Error: Directory {directory_path} does not exist")
         return None
-    
+
     # Find all benchmark output files
     pattern = os.path.join(directory_path, "*_benchmark_*cores.out")
     files = glob.glob(pattern)
-    
+
     if not files:
-        print(f"No benchmark files found in {directory_path}")
-        print(f"Looking for pattern: *_benchmark_*cores.out")
+        tee_print(f"No benchmark files found in {directory_path}")
+        tee_print(f"Looking for pattern: *_benchmark_*cores.out")
         return None
-    
-    print(f"Found {len(files)} benchmark files:")
+
+    tee_print(f"Found {len(files)} benchmark files:")
     for f in sorted(files):
-        print(f"  - {os.path.basename(f)}")
-    
+        tee_print(f"  - {os.path.basename(f)}")
+
     # Extract data from all files
     results = []
     for file_path in files:
         data = extract_benchmark_data(file_path)
         if data:
             results.append(data)
-    
+
     if not results:
-        print("No valid benchmark data could be extracted")
+        tee_print("No valid benchmark data could be extracted")
         return None
-    
+
     # Create DataFrame
     df = pd.DataFrame(results)
     df = df.sort_values(['method', 'cores'])
-    
-    print(f"\nExtracted data from {len(results)} files:")
-    print(df[['method', 'cores', 'real_time', 'user_time', 'sys_time']])
-    
+
+    tee_print(f"\nExtracted data from {len(results)} files:")
+    tee_print(df[['method', 'cores', 'real_time', 'user_time', 'sys_time']])
+
     return df
 
 def create_performance_plots(df, output_dir=None):
@@ -130,7 +158,7 @@ def create_performance_plots(df, output_dir=None):
         output_dir (str): Directory to save plots (optional)
     """
     if df is None or df.empty:
-        print("No data to plot")
+        tee_print("No data to plot")
         return
     
     # Set up the plot style
@@ -197,7 +225,7 @@ def create_performance_plots(df, output_dir=None):
         plot_path = os.path.join(output_dir, 'benchmark_performance_analysis.png')
         plt.savefig(plot_path, dpi=300, bbox_inches='tight', 
                    facecolor='white', edgecolor='none')
-        print(f"\nPlot saved to: {plot_path}")
+    tee_print(f"\nPlot saved to: {plot_path}")
     
     plt.show()
 
@@ -210,36 +238,36 @@ def create_summary_table(df):
     """
     if df is None or df.empty:
         return
-    
-    print("\n" + "="*80)
-    print("BENCHMARK RESULTS SUMMARY")
-    print("="*80)
-    
+
+    tee_print("\n" + "="*80)
+    tee_print("BENCHMARK RESULTS SUMMARY")
+    tee_print("="*80)
+
     # Summary statistics
     for method in df['method'].unique():
         method_data = df[df['method'] == method]
-        print(f"\n{method.upper()} METHOD:")
-        print("-" * 40)
-        
+        tee_print(f"\n{method.upper()} METHOD:")
+        tee_print("-" * 40)
+
         for _, row in method_data.sort_values('cores').iterrows():
             efficiency = (row['user_time'] + row['sys_time']) / row['real_time'] * 100
-            print(f"  {row['cores']:2d} cores: Real={row['real_time']:6.1f}s  "
-                  f"User={row['user_time']:6.1f}s  Sys={row['sys_time']:5.1f}s  "
-                  f"CPU Efficiency={efficiency:5.1f}%")
-    
+            tee_print(f"  {row['cores']:2d} cores: Real={row['real_time']:6.1f}s  "
+                      f"User={row['user_time']:6.1f}s  Sys={row['sys_time']:5.1f}s  "
+                      f"CPU Efficiency={efficiency:5.1f}%")
+
     # Performance comparison
-    print(f"\nPERFORMACE COMPARISON (Real Time):")
-    print("-" * 40)
-    
+    tee_print(f"\nPERFORMACE COMPARISON (Real Time):")
+    tee_print("-" * 40)
+
     pivot_df = df.pivot(index='cores', columns='method', values='real_time')
-    print(pivot_df.to_string(float_format='%.1f'))
-    
+    tee_print(pivot_df.to_string(float_format='%.1f'))
+
     # Calculate speedup
     if len(df['method'].unique()) == 2:
         methods = list(df['method'].unique())
-        print(f"\nSPEEDUP ANALYSIS:")
-        print("-" * 40)
-        
+        tee_print(f"\nSPEEDUP ANALYSIS:")
+        tee_print("-" * 40)
+
         for cores in sorted(df['cores'].unique()):
             core_data = df[df['cores'] == cores]
             if len(core_data) == 2:
@@ -248,7 +276,7 @@ def create_summary_table(df):
                     ratio = times[methods[0]] / times[methods[1]]
                     faster_method = methods[0] if ratio < 1 else methods[1]
                     speedup = max(ratio, 1/ratio)
-                    print(f"  {cores:2d} cores: {faster_method.capitalize()} is {speedup:.2f}x faster")
+                    tee_print(f"  {cores:2d} cores: {faster_method.capitalize()} is {speedup:.2f}x faster")
 
 def main():
     """Main function to run the benchmark analysis."""
@@ -295,22 +323,30 @@ def main():
             print("\nLooking for files matching pattern: *_benchmark_*cores.out")
             sys.exit(1)
 
-    print(f"Analyzing benchmark results in: {input_dir}")
-    print("="*60)
+    # Set up logging to both console and file
+    global tee_logger
+    log_path = os.path.join(input_dir if input_dir else '.', 'benchmark_results_logs.out')
+    tee_logger = TeeLogger(log_path)
+    try:
+        tee_print(f"Analyzing benchmark results in: {input_dir}")
+        tee_print("="*60)
 
-    # Analyze the benchmark files
-    df = analyze_benchmark_directory(input_dir)
+        # Analyze the benchmark files
+        df = analyze_benchmark_directory(input_dir)
 
-    if df is not None:
-        # Create summary table
-        create_summary_table(df)
+        if df is not None:
+            # Create summary table
+            create_summary_table(df)
 
-        # Create performance plots in the specified output directory (or default)
-        if output_dir is None:
-            output_dir = os.path.join(input_dir, 'plots')
-        create_performance_plots(df, output_dir)
+            # Create performance plots in the specified output directory (or default)
+            if output_dir is None:
+                output_dir = os.path.join(input_dir, 'plots')
+            create_performance_plots(df, output_dir)
 
-    print("\nAnalysis complete!")
+        tee_print("\nAnalysis complete!")
+    finally:
+        tee_logger.close()
+    sys.exit(0)
 
 if __name__ == "__main__":
     main()
