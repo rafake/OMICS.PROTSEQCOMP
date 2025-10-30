@@ -359,7 +359,6 @@ The Jaccard similarity score ranges from 0 to 1:
 - **0.1-0.5**: Moderate similarity (possible functional relationship)
 - **0.0**: No shared k-mers (likely unrelated)
 
-
 ### Task 6: Performance Benchmarking ⚡
 
 **Objective**: Measure and analyze computational performance across different CPU configurations using automated SLURM jobs
@@ -389,12 +388,14 @@ sbatch benchmark-performance.sh jaccard --length-filter
 ```
 
 **Optional parameters:**
+
 - `--length-filter` — Only compare protein pairs with sequence lengths within 10% of each other (biologically relevant filtering)
 - `-c <cores>` — Set maximum number of cores (default: 24 for performance script)
 - `-m <memory>` — Set memory in MB (default: 110000 for performance script)
 - `-t <time>` — Set time limit (default: 00:30:00 for performance script)
 
 **Examples:**
+
 ```bash
 # MinHash with length filtering and custom resources
 sbatch benchmark-performance.sh minhash --length-filter -c 24 -m 110000 -t 01:00:00
@@ -432,18 +433,43 @@ python minhash.py --length-filter
 
 #### Performance Analysis & Visualization
 
-📄 **`analyze_benchmark_batch.sh`** - Automated performance analysis and plotting script
+📄 **`analyze_benchmark_results.py`** - Comprehensive benchmark results analysis and reporting
 
-The project includes an integrated analysis system that automatically processes benchmark results and generates visualization plots:
+This script provides advanced analysis and reporting for all benchmark results, including:
+
+- **Flexible input/output**: Accepts optional input and output directory arguments.
+- **Excel summary**: Writes summary and comparison tables to `benchmark_results_summary.xlsx`.
+- **Full logging**: Logs all output, tables, and Spark config to `benchmark_results_logs.out`.
+- **Spark config extraction**: Reads all `OMICS-multi-benchmark-p-*` files, extracts Spark configuration for each run (partitions, driver memory, executor memory, max result size), and logs/plots this data for both jaccard and minhash.
+- **Visualization**: Generates performance plots and a Spark config summary plot for each method.
+
+**Usage:**
 
 ```bash
-# Analyze and visualize all benchmark results for the latest sample timestamp
-sbatch analyze_benchmark_batch.sh
+# Analyze and visualize all benchmark results in a directory
+python analyze_benchmark_results.py [input_dir] [output_dir]
 ```
 
-This system uses the Anaconda module (`apps/anaconda/2024-10`) for scientific computing with Matplotlib to generate comprehensive performance visualization plots. It automatically detects benchmark directories, processes all available results, and saves plots directly in benchmark results directories alongside raw data.
+- `input_dir` (optional): Directory containing benchmark files (auto-detected if omitted)
+- `output_dir` (optional): Directory to save plots and Excel/log files (defaults to `<input_dir>/plots`)
+
+**Outputs:**
+
+- `benchmark_results_logs.out` — Full log of all analysis output, tables, and Spark config
+- `benchmark_results_summary.xlsx` — Excel file with summary, comparison, and speedup tables
+- `benchmark_performance_analysis.png` — Performance plot (time vs. cores)
+- `benchmark_spark_config_summary.png` — Spark config plot (partitions vs. cores, with memory annotations)
+
+**What is extracted and visualized:**
+
+- All benchmark output files (e.g., `*_benchmark_*cores.out`) are analyzed for timing and performance.
+- All `OMICS-multi-benchmark-p-*` files are parsed for Spark configuration for each run (for both jaccard and minhash), and this data is logged and plotted.
+- All tables and plots are saved in the output directory for easy review.
+
+This system uses the Anaconda module (`apps/anaconda/2024-10`) for scientific computing with Matplotlib and openpyxl for Excel output. It automatically detects benchmark directories, processes all available results, and saves plots, Excel, and logs directly in the benchmark results directory alongside raw data.
 
 #### Job Monitoring
+
 Monitor job progress with standard SLURM commands:
 
 ```bash
