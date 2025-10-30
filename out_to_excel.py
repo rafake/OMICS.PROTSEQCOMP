@@ -49,15 +49,40 @@ for file in out_files:
             # Parse data rows
             data = [line.split('|')[1:-1] for line in lines if line.strip()]
             df = pd.DataFrame(data, columns=[h.strip() for h in header])
-            # Save DataFrame by file name (sheet name)
+
+            # Extract timing info (real, user, sys) with more robust regex
+            timing_lines = []
+            for timing_key in ['real', 'user', 'sys']:
+                timing_match = re.search(rf'^{timing_key}\s+([0-9m\.]+s)', content, re.MULTILINE | re.IGNORECASE)
+                if timing_match:
+                    timing_lines.append(f"{timing_key}\t{timing_match.group(1)}")
+            if not timing_lines:
+                # Try to find all timing lines anywhere in the file as a fallback
+                fallback_matches = re.findall(r'^(real|user|sys)\s+([0-9m\.]+s)', content, re.MULTILINE | re.IGNORECASE)
+                for key, val in fallback_matches:
+                    timing_lines.append(f"{key}\t{val}")
+            # Save DataFrame and timing info by file name (sheet name)
             sheet_name = os.path.splitext(os.path.basename(file))[0][:31]  # Excel sheet name max 31 chars
-            tables_by_file[sheet_name] = df
+            tables_by_file[sheet_name] = (df, timing_lines)
             file_names.append(os.path.basename(file))
 
 if tables_by_file:
+    # First, write all tables
     with pd.ExcelWriter(output_excel, engine='openpyxl') as writer:
-        for sheet, df in tables_by_file.items():
+        for sheet, (df, timing_lines) in tables_by_file.items():
             df.to_excel(writer, sheet_name=sheet, index=False)
+
+    # Now, append timing info using openpyxl
+    from openpyxl import load_workbook
+    wb = load_workbook(output_excel)
+    for sheet, (df, timing_lines) in tables_by_file.items():
+        ws = wb[sheet]
+        start_row = len(df) + 3  # 1 for header, 1 for empty row, 1 for 1-based index
+        if timing_lines:
+            # Add a blank row before timing info
+            for i, line in enumerate(timing_lines):
+                ws.cell(row=start_row + i, column=1, value=line)
+    wb.save(output_excel)
     print(f"Saved summary to {output_excel} with {len(tables_by_file)} sheets from files: {file_names}")
 else:
     print("No Top 10 tables found in .out files.")
